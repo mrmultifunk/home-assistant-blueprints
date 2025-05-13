@@ -10,17 +10,27 @@ blueprint:
   domain: automation
 
   input:
+    window_area:
+      name: Window area
+      description: Pick the area that contains your window sensor(s).
+      selector:
+        area: {}
+
     window_entity:
       name: Window Sensor
       description: >
-        The window sensor that controls the climate entity. If you have
-        more window sensors please make a group sensor.
+        Only sensors in the selected area (old `window` device_class or new
+        grouped `opening` → subtype `window`) will show up here.
       selector:
         entity:
-          domain: binary_sensor
-          device_class:
-            - window
-            - opening
+          filter:
+            include:
+              - domain: binary_sensor
+                device_class: window
+                area_id: !input window_area
+              - domain: binary_sensor
+                device_class: opening
+                area_id: !input window_area
           multiple: false
 
     minimum_open_time:
@@ -29,11 +39,11 @@ blueprint:
       default: 12
       selector:
         number:
-          min: 0.0
-          max: 120.0
+          min: 0
+          max: 120
           unit_of_measurement: seconds
           mode: slider
-          step: 1.0
+          step: 1
 
     minimum_close_time:
       name: Minimum close time
@@ -41,11 +51,11 @@ blueprint:
       default: 12
       selector:
         number:
-          min: 0.0
-          max: 300.0
+          min: 0
+          max: 300
           unit_of_measurement: seconds
           mode: slider
-          step: 1.0
+          step: 1
 
     climate_target:
       name: Climate Device
@@ -57,18 +67,14 @@ blueprint:
 
     open_action:
       name: Additional Open Action (Optional)
-      description: >
-        Action to perform if the door/window sensor is opened
-        (e.g. open blind, tts announcement)
+      description: Action to perform if the window sensor is opened
       default: []
       selector:
         action: {}
 
     close_action:
       name: Additional Close Action (Optional)
-      description: >
-        Action to perform if the door/window sensor is closed again
-        (e.g. close blind, tts announcement)
+      description: Action to perform if the window sensor is closed again
       default: []
       selector:
         action: {}
@@ -94,7 +100,6 @@ condition:
 
 action:
   - choose:
-
       # COOL mode
       - conditions:
           - condition: state
@@ -105,7 +110,7 @@ action:
             target:
               entity_id: !input climate_target
           - choose:
-              - conditions: '{{ open_action is defined and open_action|length > 0 }}'
+              - conditions: "{{ open_action | length > 0 }}"
                 sequence: !input open_action
           - wait_for_trigger:
               - platform: state
@@ -114,7 +119,7 @@ action:
             continue_on_timeout: false
           - delay: !input minimum_close_time
           - choose:
-              - conditions: '{{ close_action is defined and close_action|length > 0 }}'
+              - conditions: "{{ close_action | length > 0 }}"
                 sequence: !input close_action
           - service: climate.set_hvac_mode
             target:
@@ -132,7 +137,7 @@ action:
             target:
               entity_id: !input climate_target
           - choose:
-              - conditions: '{{ open_action is defined and open_action|length > 0 }}'
+              - conditions: "{{ open_action | length > 0 }}"
                 sequence: !input open_action
           - wait_for_trigger:
               - platform: state
@@ -141,7 +146,7 @@ action:
             continue_on_timeout: false
           - delay: !input minimum_close_time
           - choose:
-              - conditions: '{{ close_action is defined and close_action|length > 0 }}'
+              - conditions: "{{ close_action | length > 0 }}"
                 sequence: !input close_action
           - service: climate.set_hvac_mode
             target:
@@ -159,7 +164,7 @@ action:
             target:
               entity_id: !input climate_target
           - choose:
-              - conditions: '{{ open_action is defined and open_action|length > 0 }}'
+              - conditions: "{{ open_action | length > 0 }}"
                 sequence: !input open_action
           - wait_for_trigger:
               - platform: state
@@ -168,7 +173,7 @@ action:
             continue_on_timeout: false
           - delay: !input minimum_close_time
           - choose:
-              - conditions: '{{ close_action is defined and close_action|length > 0 }}'
+              - conditions: "{{ close_action | length > 0 }}"
                 sequence: !input close_action
           - service: climate.set_hvac_mode
             target:
@@ -186,7 +191,7 @@ action:
             target:
               entity_id: !input climate_target
           - choose:
-              - conditions: '{{ open_action is defined and open_action|length > 0 }}'
+              - conditions: "{{ open_action | length > 0 }}"
                 sequence: !input open_action
           - wait_for_trigger:
               - platform: state
@@ -195,7 +200,7 @@ action:
             continue_on_timeout: false
           - delay: !input minimum_close_time
           - choose:
-              - conditions: '{{ close_action is defined and close_action|length > 0 }}'
+              - conditions: "{{ close_action | length > 0 }}"
                 sequence: !input close_action
           - service: climate.set_hvac_mode
             target:
@@ -213,7 +218,7 @@ action:
             target:
               entity_id: !input climate_target
           - choose:
-              - conditions: '{{ open_action is defined and open_action|length > 0 }}'
+              - conditions: "{{ open_action | length > 0 }}"
                 sequence: !input open_action
           - wait_for_trigger:
               - platform: state
@@ -222,7 +227,7 @@ action:
             continue_on_timeout: false
           - delay: !input minimum_close_time
           - choose:
-              - conditions: '{{ close_action is defined and close_action|length > 0 }}'
+              - conditions: "{{ close_action | length > 0 }}"
                 sequence: !input close_action
           - service: climate.set_hvac_mode
             target:
@@ -240,7 +245,7 @@ action:
             target:
               entity_id: !input climate_target
           - choose:
-              - conditions: '{{ open_action is defined and open_action|length > 0 }}'
+              - conditions: "{{ open_action | length > 0 }}"
                 sequence: !input open_action
           - wait_for_trigger:
               - platform: state
@@ -249,7 +254,7 @@ action:
             continue_on_timeout: false
           - delay: !input minimum_close_time
           - choose:
-              - conditions: '{{ close_action is defined and close_action|length > 0 }}'
+              - conditions: "{{ close_action | length > 0 }}"
                 sequence: !input close_action
           - service: climate.set_hvac_mode
             target:
@@ -267,7 +272,7 @@ action:
             target:
               entity_id: !input climate_target
           - choose:
-              - conditions: '{{ open_action is defined and open_action|length > 0 }}'
+              - conditions: "{{ open_action | length > 0 }}"
                 sequence: !input open_action
           - wait_for_trigger:
               - platform: state
@@ -276,7 +281,7 @@ action:
             continue_on_timeout: false
           - delay: !input minimum_close_time
           - choose:
-              - conditions: '{{ close_action is defined and close_action|length > 0 }}'
+              - conditions: "{{ close_action | length > 0 }}"
                 sequence: !input close_action
           - service: climate.set_hvac_mode
             target:
