@@ -4,7 +4,7 @@ Home Assistant automation blueprints maintained by **mrmultifunk**.
 
 ## IKEA TRÅDFRI 5-button remote (Zigbee2MQTT event)
 
-**Current version: v1.1.0**
+**Current version: v1.2.0**
 
 [Open the blueprint](Blueprints/ikea_tradfri_5_button_event.yaml) ·
 [Import in Home Assistant](https://github.com/mrmultifunk/home-assistant-blueprints/blob/main/Blueprints/ikea_tradfri_5_button_event.yaml)
@@ -15,40 +15,60 @@ It uses the **Zigbee2MQTT event entity** already available in Home Assistant
 (e.g. `event.lea_fjernbetjening_1_vaeg_action`), rather than deprecated
 legacy action sensors.
 
-### Physical FUGA button mapping
+### Three selector positions
 
-The input sections now follow the **three rows of the FUGA wall switch**
-rather than the five directional positions of the original IKEA puck.
+The small physical slide switch changes which function is behind the
+**Top Left** and **Middle** buttons. Choose the matching layout using
+**FUGA selector position** in the blueprint. **Middle** is the default.
+
+| Physical key | Left | Middle (default) | Right |
+| --- | --- | --- | --- |
+| Top left | Power (`toggle`) | Left arrow (`arrow_left_click`) | Power (`toggle`) |
+| Top right | Right arrow (`arrow_right_click`) | Right arrow (`arrow_right_click`) | Right arrow (`arrow_right_click`) |
+| Middle | Left arrow (`arrow_left_click`) | Power (`toggle`) | Link/pair — not programmable |
+| Bottom left | Brighter (`brightness_up_click`) | Brighter | Brighter |
+| Bottom right | Dimmer (`brightness_down_click`) | Dimmer | Dimmer |
 
 ```text
-┌─────────────────┬─────────────────┐
-│  ◀ TOP LEFT     │ TOP RIGHT ▶     │
-├─────────────────┴─────────────────┤
-│            ⏻ POWER               │
-├─────────────────┬─────────────────┤
-│ ☀+ BOTTOM LEFT  │ BOTTOM RIGHT ☼− │
-└─────────────────┴─────────────────┘
+LEFT                 MIDDLE (DEFAULT)      RIGHT
+┌───────┬───────┐    ┌───────┬───────┐    ┌───────┬───────┐
+│  ⏻    │   ▶   │    │   ◀   │   ▶   │    │   ⏻   │   ▶   │
+├───────┴───────┤    ├───────┴───────┤    ├───────┴───────┤
+│       ◀       │    │       ⏻       │    │     LINK      │
+├───────┬───────┤    ├───────┬───────┤    ├───────┬───────┤
+│  ☀+   │  ☼−   │    │  ☀+   │  ☼−   │    │  ☀+   │  ☼−   │
+└───────┴───────┘    └───────┴───────┘    └───────┴───────┘
 ```
 
-| Physical key (FUGA) | Zigbee2MQTT click event | Action input |
-| --- | --- | --- |
-| Top left · ◀ | `arrow_left_click` | `arrow_left_click_action` |
-| Top right · ▶ | `arrow_right_click` | `arrow_right_click_action` |
-| Middle · ⏻ Power | `toggle` | `center_click_action` |
-| Bottom left · ☀+ Larger sun | `brightness_up_click` | `brightness_up_click_action` |
-| Bottom right · ☼− Smaller sun | `brightness_down_click` | `brightness_down_click_action` |
+**Important:** The action inputs continue to refer to the **physical
+position** (Top Left, Top Right, Middle, Bottom Left, Bottom Right),
+regardless of which hardware function is behind that position. v1.2.0
+normalizes incoming Z2M events before choosing an action:
 
-Advanced holds and releases are also labelled with the **same
-physical locations**. All 14 action-input IDs are unchanged from v1.0.0,
-so existing automations keep their configured actions.
+- In **Left** position, `toggle` drives the Top Left action and
+  `arrow_left_click` drives the Middle action. Related holds are
+  swapped. A new optional `center_release_action` is available for
+  the Middle button's `arrow_left_release` event.
+- In **Middle** position, events are unchanged from v1.1.0.
+- In **Right** position, `toggle` drives the Top Left action, while
+  the center Link/pair button is not treated as a configurable
+  Zigbee2MQTT event. `arrow_left_*` events are ignored in this
+  position.
 
-**Validate your physical conversion:** The layout follows the
-symbols on the supplied FUGA face. The mechanical button mapping was
-not independently tested. In **Developer Tools → States** select
-`event.lea_fjernbetjening_1_vaeg_action`, press each FUGA button,
-and compare its `event_type` attribute to the table. If a position
-generates a different event, its physical mapping needs to be adjusted
-before assigning important actions.
+The linked/pair button is **hardware pairing**, rather than an additional
+standard action reported by Zigbee2MQTT. The official [E1524/E1810
+documentation](https://www.zigbee2mqtt.io/devices/E1524_E1810.html)
+describes pairing separately from button action events.
+
+**The table is inferred from the provided switch image.** Verify your
+particular conversion by checking the `event_type` attribute of
+`event.lea_fjernbetjening_1_vaeg_action` under
+**Developer Tools → States**, pressing one physical button at a time.
+If your conversion behaves differently, don't assume the mapping is correct.
+
+Existing click and hold action-input identifiers are unchanged. Your
+existing automations keep their settings with the default Middle
+selector position.
 
 Any Home Assistant action sequence can be configured independently for
 each button. Unconfigured buttons do nothing. The advanced hold and release
@@ -107,9 +127,9 @@ a separate light device unconditionally on *every* remote event.
 ### Setup
 
 1. Import the GitHub YAML through **Settings → Automations & Scenes → Blueprints → Import blueprint**.
-2. Create an automation from **IKEA TRÅDFRI 5-button – FUGA layout (Z2M) v1.1.0**.
-3. Pick the remote's `event.*_action` entity.
-4. Fill in actions for the desired buttons and save.
+2. Create an automation from **IKEA TRÅDFRI 5-button – FUGA layout (Z2M) v1.2.0**.
+3. Pick the remote's `event.*_action` entity, and choose the matching **FUGA selector position** (Middle is default).
+4. Fill in actions for the physical buttons and save.
 5. Inspect **Traces** if a button action does not run.
 
 Requires Home Assistant 2024.6.0 or newer (blueprint input sections),
