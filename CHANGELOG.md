@@ -2,6 +2,26 @@
 
 Version numbers follow Semantic Versioning: `MAJOR.MINOR.PATCH`.
 
+## [1.6.0] - 2026-10-23
+
+### Added
+- Optional **Warn about unavailable sensors** toggle (enabled by default).
+- Configurable **Sensor warning delay** slider (60–3600 seconds, default 600).
+- A persistent Home Assistant notification when a selected door/window contact
+  has remained `unknown` or `unavailable` past the delay and prevents restoring
+  the climate device; notification identifies affected contacts and climate.
+- Automatically dismiss the warning when the contacts recover, the climate
+  session finishes, or manual override ends the pending restoration.
+- Stable per-automation notification ID; no extra helper or mobile app needed.
+
+### Behavior
+- If another selected contact remains open, a failed contact is not yet the
+  only reason for the thermostat being off, so no warning is posted.
+- Faulty sensors still block restoration. A 30-second wait timeout polls
+  fault duration while keeping restoration and manual override responsive.
+- Warnings are only monitored during an active, pending climate restoration,
+  not as an independent always-on binary-sensor health monitor.
+
 ## [1.5.0] - 2026-10-23
 
 ### Added
