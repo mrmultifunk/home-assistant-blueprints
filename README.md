@@ -4,7 +4,7 @@ Home Assistant automation blueprints maintained by **mrmultifunk**.
 
 ## IKEA TRÅDFRI 5-button remote (Zigbee2MQTT event)
 
-**Current version: v1.0.0**
+**Current version: v1.1.0**
 
 [Open the blueprint](Blueprints/ikea_tradfri_5_button_event.yaml) ·
 [Import in Home Assistant](https://github.com/mrmultifunk/home-assistant-blueprints/blob/main/Blueprints/ikea_tradfri_5_button_event.yaml)
@@ -15,17 +15,40 @@ It uses the **Zigbee2MQTT event entity** already available in Home Assistant
 (e.g. `event.lea_fjernbetjening_1_vaeg_action`), rather than deprecated
 legacy action sensors.
 
-### Button actions
+### Physical FUGA button mapping
 
-| Button | Zigbee2MQTT event | Configurable input |
+The input sections now follow the **three rows of the FUGA wall switch**
+rather than the five directional positions of the original IKEA puck.
+
+```text
+┌─────────────────┬─────────────────┐
+│  ◀ TOP LEFT     │ TOP RIGHT ▶     │
+├─────────────────┴─────────────────┤
+│            ⏻ POWER               │
+├─────────────────┬─────────────────┤
+│ ☀+ BOTTOM LEFT  │ BOTTOM RIGHT ☼− │
+└─────────────────┴─────────────────┘
+```
+
+| Physical key (FUGA) | Zigbee2MQTT click event | Action input |
 | --- | --- | --- |
-| Center | `toggle` | Center button |
-| Up | `brightness_up_click` | Brightness up |
-| Down | `brightness_down_click` | Brightness down |
-| Left | `arrow_left_click` | Left arrow |
-| Right | `arrow_right_click` | Right arrow |
-| Center hold | `toggle_hold` | Center hold (optional) |
-| Other holds/releases | `*_hold`, `*_release` | Advanced sections (optional) |
+| Top left · ◀ | `arrow_left_click` | `arrow_left_click_action` |
+| Top right · ▶ | `arrow_right_click` | `arrow_right_click_action` |
+| Middle · ⏻ Power | `toggle` | `center_click_action` |
+| Bottom left · ☀+ Larger sun | `brightness_up_click` | `brightness_up_click_action` |
+| Bottom right · ☼− Smaller sun | `brightness_down_click` | `brightness_down_click_action` |
+
+Advanced holds and releases are also labelled with the **same
+physical locations**. All 14 action-input IDs are unchanged from v1.0.0,
+so existing automations keep their configured actions.
+
+**Validate your physical conversion:** The layout follows the
+symbols on the supplied FUGA face. The mechanical button mapping was
+not independently tested. In **Developer Tools → States** select
+`event.lea_fjernbetjening_1_vaeg_action`, press each FUGA button,
+and compare its `event_type` attribute to the table. If a position
+generates a different event, its physical mapping needs to be adjusted
+before assigning important actions.
 
 Any Home Assistant action sequence can be configured independently for
 each button. Unconfigured buttons do nothing. The advanced hold and release
@@ -84,7 +107,7 @@ a separate light device unconditionally on *every* remote event.
 ### Setup
 
 1. Import the GitHub YAML through **Settings → Automations & Scenes → Blueprints → Import blueprint**.
-2. Create an automation from **IKEA TRÅDFRI 5-button remote (Z2M event) v1.0.0**.
+2. Create an automation from **IKEA TRÅDFRI 5-button – FUGA layout (Z2M) v1.1.0**.
 3. Pick the remote's `event.*_action` entity.
 4. Fill in actions for the desired buttons and save.
 5. Inspect **Traces** if a button action does not run.
