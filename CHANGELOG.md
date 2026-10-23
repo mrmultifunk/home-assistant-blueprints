@@ -102,3 +102,22 @@ First explicitly versioned release of the window-open climate blueprint.
 - Initial window-open climate automation.
 - Support selecting multiple binary sensors (windows and doors).
 - Restore the previous HVAC mode after all selected sensors report closed.
+
+
+---
+
+## IKEA TRÅDFRI five-button remote (Zigbee2MQTT event)
+
+### [1.0.0] - 2026-10-23
+
+- New `Blueprints/ikea_tradfri_5_button_event.yaml` automation blueprint.
+- Assign arbitrary Home Assistant actions independently to all five short button
+  presses on an IKEA E1524/E1810 round remote.
+- Optional hold and release event actions (14 supported Zigbee2MQTT action events).
+- Uses Zigbee2MQTT's `event.*_action` entity and its `event_type` attribute,
+  with no additional helper or legacy action sensor.
+- Uses queued automation mode to avoid cancelled button actions when
+  hold/release events follow one another.
+- Collapsed advanced inputs for optional long-press and release actions.
+- Example configuration for Lea's wall remote in README.
+- The existing Lea automation is **not changed automatically**.
