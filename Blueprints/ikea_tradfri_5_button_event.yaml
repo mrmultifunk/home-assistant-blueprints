@@ -1,9 +1,9 @@
 # IKEA TRÅDFRI E1524/E1810 – FUGA-konvertering til Zigbee2MQTT
-# Version: 1.2.3
+# Version: 1.2.4
 blueprint:
-  name: "IKEA TRÅDFRI – FUGA-fjernbetjening (Zigbee2MQTT) v1.2.3"
+  name: "IKEA TRÅDFRI – FUGA-fjernbetjening (Zigbee2MQTT) v1.2.4"
   description: |-
-    **IKEA TRÅDFRI · FUGA-fjernbetjening · v1.2.3**
+    **IKEA TRÅDFRI · FUGA-fjernbetjening · v1.2.4**
 
     Vælg selv, hvad hver knap på din FUGA-kontakt skal gøre. Blueprintet understøtter **alle tre positioner** på den lille mekaniske omskifter. **Midten er standard.**
 
@@ -30,6 +30,8 @@ blueprint:
 
     **Husk at tildele handlinger:** Knapperne har ingen standardhandling. Vælg f.eks. *Lys → Skift (toggle)* under den ønskede knap. Handlinger fra en tidligere automation overføres ikke automatisk.
 
+    **Fejlfinding:** Fjernbetjeningsvælgeren viser kun MQTT-event-entiteter. Ukendte knaphændelser får en forklaring i automationssporingen (`raw_button_event` og `button_event`).
+
     [FUGA-modellen på Printables](https://www.printables.com/model/93848-zigbee-til-danske-kontakter) · [Zigbee2MQTT – understøttede hændelser](https://www.zigbee2mqtt.io/devices/E1524_E1810.html)
   author: "mrmultifunk"
   domain: automation
@@ -43,11 +45,12 @@ blueprint:
       input:
         remote_event:
           name: "Fjernbetjeningens hændelsesentitet"
-          description: "Vælg Zigbee2MQTT-entiteten der slutter på _action, f.eks. event.lea_fjernbetjening_1_vaeg_action."
+          description: "Vælg MQTT-hændelsesentiteten fra Zigbee2MQTT, som slutter på _action. For eksempel event.lea_fjernbetjening_1_vaeg_action."
           selector:
             entity:
               filter:
                 - domain: event
+                  integration: mqtt
 
         switch_position:
           name: "Omskifterens position"
@@ -219,7 +222,7 @@ conditions:
 
 actions:
   - variables:
-      blueprint_version: "1.2.3"
+      blueprint_version: "1.2.4"
       raw_button_event: "{{ trigger.to_state.attributes.get('event_type', '') if trigger.to_state else '' }}"
       # Normalize the hardware event to a logical physical FUGA position.
       # Existing action input keys retain their meanings in Middle mode.
@@ -305,3 +308,5 @@ actions:
           - condition: template
             value_template: "{{ button_event == 'arrow_right_release' }}"
         sequence: !input arrow_right_release_action
+    default:
+      - stop: "Ingen understøttet knaphændelse. Kontrollér valgt MQTT-event-entitet og omskifterposition. Se raw_button_event og button_event i sporingen."
