@@ -461,9 +461,9 @@ actions:
                           data:
                             value: "none"
                     - action: persistent_notification.dismiss
-                  data:
-                    notification_id: "{{ sensor_warning_id }}"
-                - stop: "Manual/other automation override respected."
+                      data:
+                        notification_id: "{{ sensor_warning_id }}"
+                    - stop: "Manual/other automation override respected."
 
             - if:
                 - condition: template
