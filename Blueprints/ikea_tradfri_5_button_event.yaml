@@ -1,37 +1,49 @@
 # IKEA TRÅDFRI E1524/E1810 Zigbee2MQTT event-based 5-button remote
-# Version: 1.0.0
+# FUGA wall switch physical button mapping (as pictured).
+# Version: 1.1.0
 blueprint:
-  name: "IKEA TRÅDFRI 5-button remote (Z2M event) v1.0.0"
+  name: "IKEA TRÅDFRI 5-button – FUGA layout (Z2M) v1.1.0"
   description: |-
-    **IKEA TRÅDFRI 5-button remote** · **v1.0.0**
+    **IKEA TRÅDFRI 5-button / FUGA** · **v1.1.0**
 
-    Assign custom Home Assistant actions to the five buttons of the
-    IKEA E1524/E1810 round Zigbee remote, including remotes converted
-    to a FUGA-style wall switch.
+    Configure each action by the **physical position** of the button
+    on the FUGA-style wall switch instead of the original round puck.
 
-    ### Features
+    ### Physical button layout
 
-    - **5 short presses:** Center, brightness up/down, left/right.
-    - **Optional hold/release actions:** Available in the collapsed
-      advanced sections.
-    - **Any action:** Lights, switches, scenes, scripts or automation actions.
-    - **No additional helpers:** Uses your existing Zigbee2MQTT
-      `event.*_action` entity and its `event_type` attribute.
+    ```text
+      ┌────────────┬────────────┐
+      │ ◀ TOP LEFT │ TOP RIGHT ▶│
+      ├────────────┴────────────┤
+      │       ⏻ POWER          │
+      ├────────────┬────────────┤
+      │ ☀+ BRIGHTER│ DIMMER ☼−  │
+      └────────────┴────────────┘
+    ```
 
-    ### Setup
+    ### Zigbee2MQTT mapping
 
-    1. Choose the remote's `event.*_action` entity.
-    2. Configure the actions you want for each button.
-    3. Leave unused actions empty.
+    - **Top left ◀** → `arrow_left_click`
+    - **Top right ▶** → `arrow_right_click`
+    - **Middle ⏻** → `toggle`
+    - **Bottom left ☀+** → `brightness_up_click`
+    - **Bottom right ☼−** → `brightness_down_click`
 
-    > **Note:** This blueprint listens to Zigbee2MQTT **event entities**,
-    > not ZHA device events. Holding the center button can generate
-    > both `toggle` and `toggle_hold`, depending on firmware.
-    > Hold actions execute once when the event arrives; continuous
-    > dimming requires a separate script or sequence.
+    Open the advanced sections for optional hold/release actions.
+    All buttons are independently configurable; unused actions are
+    ignored. No helpers are required.
 
-    [Printables FUGA conversion](https://www.printables.com/model/93848-zigbee-til-danske-kontakter)
-    · [Zigbee2MQTT E1524/E1810](https://www.zigbee2mqtt.io/devices/E1524_E1810.html)
+    **Important:** The mapping above follows the printed symbols.
+    Check the `event_type` attribute of your remote's
+    `event.*_action` entity to verify the actual physical mapping
+    on your particular 3D-printed conversion.
+
+    > The center button can emit both `toggle` and `toggle_hold`
+    > during one long press. Hold actions fire once per event and
+    > are not continuous brightness loops.
+
+    [FUGA conversion](https://www.printables.com/model/93848-zigbee-til-danske-kontakter)
+    · [Supported Zigbee2MQTT actions](https://www.zigbee2mqtt.io/devices/E1524_E1810.html)
   author: "mrmultifunk"
   domain: automation
   homeassistant:
@@ -50,117 +62,127 @@ blueprint:
               filter:
                 - domain: event
 
-    short_presses:
-      name: "Short presses"
-      icon: mdi:gesture-tap
-      description: "Each button can run its own independent sequence."
+    top_row:
+      name: "1 · TOP — Arrow keys (◀ ▶)"
+      icon: mdi:arrow-left-right
+      description: "Left and right halves of the upper rocker."
       input:
-        center_click_action:
-          name: "Center button"
-          description: "Actions to execute for `toggle`. Leave empty to ignore."
-          default: []
-          selector:
-            action: {}
-
-        brightness_up_click_action:
-          name: "Brightness up"
-          description: "Actions to execute for `brightness_up_click`. Leave empty to ignore."
-          default: []
-          selector:
-            action: {}
-
-        brightness_down_click_action:
-          name: "Brightness down"
-          description: "Actions to execute for `brightness_down_click`. Leave empty to ignore."
-          default: []
-          selector:
-            action: {}
-
         arrow_left_click_action:
-          name: "Left arrow"
-          description: "Actions to execute for `arrow_left_click`. Leave empty to ignore."
+          name: "TOP LEFT · ◀ Arrow"
+          description: "Zigbee2MQTT event: `arrow_left_click`. Leave empty to ignore."
           default: []
           selector:
             action: {}
 
         arrow_right_click_action:
-          name: "Right arrow"
-          description: "Actions to execute for `arrow_right_click`. Leave empty to ignore."
+          name: "TOP RIGHT · ▶ Arrow"
+          description: "Zigbee2MQTT event: `arrow_right_click`. Leave empty to ignore."
           default: []
           selector:
             action: {}
-
-    hold_actions:
-      name: "Long presses (optional)"
-      icon: mdi:gesture-tap-hold
-      collapsed: true
-      description: "Run once on the hold event. The center hold may also generate a normal center click."
+ 
+    middle_row:
+      name: "2 · MIDDLE — Power (⏻)"
+      icon: mdi:power
+      description: "Single wide button in the middle."
       input:
-        center_hold_action:
-          name: "Center hold"
-          description: "Actions to execute for `toggle_hold`. Leave empty to ignore."
+        center_click_action:
+          name: "MIDDLE · ⏻ Power"
+          description: "Zigbee2MQTT event: `toggle`. Leave empty to ignore."
+          default: []
+          selector:
+            action: {}
+ 
+    bottom_row:
+      name: "3 · BOTTOM — Brightness (☀+ / ☼−)"
+      icon: mdi:brightness-6
+      description: "Large sun on the left, small sun on the right."
+      input:
+        brightness_up_click_action:
+          name: "BOTTOM LEFT · ☀+ Brighter"
+          description: "Zigbee2MQTT event: `brightness_up_click`. Leave empty to ignore."
           default: []
           selector:
             action: {}
 
-        brightness_up_hold_action:
-          name: "Brightness up hold"
-          description: "Actions to execute for `brightness_up_hold`. Leave empty to ignore."
+        brightness_down_click_action:
+          name: "BOTTOM RIGHT · ☼− Dimmer"
+          description: "Zigbee2MQTT event: `brightness_down_click`. Leave empty to ignore."
           default: []
           selector:
             action: {}
-
-        brightness_down_hold_action:
-          name: "Brightness down hold"
-          description: "Actions to execute for `brightness_down_hold`. Leave empty to ignore."
-          default: []
-          selector:
-            action: {}
-
+ 
+    hold_actions:
+      name: "Advanced · Long presses (optional)"
+      icon: mdi:gesture-tap-hold
+      description: "Runs once when the hold event arrives."
+      collapsed: true
+      input:
         arrow_left_hold_action:
-          name: "Left arrow hold"
-          description: "Actions to execute for `arrow_left_hold`. Leave empty to ignore."
+          name: "TOP LEFT · ◀ Hold"
+          description: "Zigbee2MQTT event: `arrow_left_hold`. Leave empty to ignore."
           default: []
           selector:
             action: {}
 
         arrow_right_hold_action:
-          name: "Right arrow hold"
-          description: "Actions to execute for `arrow_right_hold`. Leave empty to ignore."
+          name: "TOP RIGHT · ▶ Hold"
+          description: "Zigbee2MQTT event: `arrow_right_hold`. Leave empty to ignore."
           default: []
           selector:
             action: {}
 
+        center_hold_action:
+          name: "MIDDLE · ⏻ Hold"
+          description: "Zigbee2MQTT event: `toggle_hold`. Leave empty to ignore."
+          default: []
+          selector:
+            action: {}
+
+        brightness_up_hold_action:
+          name: "BOTTOM LEFT · ☀+ Hold"
+          description: "Zigbee2MQTT event: `brightness_up_hold`. Leave empty to ignore."
+          default: []
+          selector:
+            action: {}
+
+        brightness_down_hold_action:
+          name: "BOTTOM RIGHT · ☼− Hold"
+          description: "Zigbee2MQTT event: `brightness_down_hold`. Leave empty to ignore."
+          default: []
+          selector:
+            action: {}
+ 
     release_actions:
-      name: "Button releases (optional)"
+      name: "Advanced · Releases (optional)"
       icon: mdi:gesture-tap-button
+      description: "Actions when a held arrow or brightness button is released."
       collapsed: true
-      description: "Run when a held directional or brightness button is released."
       input:
-        brightness_up_release_action:
-          name: "Brightness up release"
-          description: "Actions to execute for `brightness_up_release`. Leave empty to ignore."
-          default: []
-          selector:
-            action: {}
-
-        brightness_down_release_action:
-          name: "Brightness down release"
-          description: "Actions to execute for `brightness_down_release`. Leave empty to ignore."
-          default: []
-          selector:
-            action: {}
-
         arrow_left_release_action:
-          name: "Left arrow release"
-          description: "Actions to execute for `arrow_left_release`. Leave empty to ignore."
+          name: "TOP LEFT · ◀ Release"
+          description: "Zigbee2MQTT event: `arrow_left_release`. Leave empty to ignore."
           default: []
           selector:
             action: {}
 
         arrow_right_release_action:
-          name: "Right arrow release"
-          description: "Actions to execute for `arrow_right_release`. Leave empty to ignore."
+          name: "TOP RIGHT · ▶ Release"
+          description: "Zigbee2MQTT event: `arrow_right_release`. Leave empty to ignore."
+          default: []
+          selector:
+            action: {}
+
+        brightness_up_release_action:
+          name: "BOTTOM LEFT · ☀+ Release"
+          description: "Zigbee2MQTT event: `brightness_up_release`. Leave empty to ignore."
+          default: []
+          selector:
+            action: {}
+
+        brightness_down_release_action:
+          name: "BOTTOM RIGHT · ☼− Release"
+          description: "Zigbee2MQTT event: `brightness_down_release`. Leave empty to ignore."
           default: []
           selector:
             action: {}
@@ -183,7 +205,7 @@ conditions:
 
 actions:
   - variables:
-      blueprint_version: "1.0.0"
+      blueprint_version: "1.1.0"
       button_event: "{{ trigger.to_state.attributes.get('event_type', '') if trigger.to_state else '' }}"
 
   - choose:
