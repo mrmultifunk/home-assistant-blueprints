@@ -4,7 +4,7 @@ Home Assistant automation blueprints maintained by **mrmultifunk**.
 
 ## Window open - Climate off and restore
 
-**Current version: v1.5.0**
+**Current version: v1.6.0**
 
 [Open the blueprint](Blueprints/window_open_climate_off.yaml)
 
@@ -17,17 +17,51 @@ Home Assistant automation blueprints maintained by **mrmultifunk**.
 - Optional `input_text` helper for *exact* previous-HVAC-mode restoration after restarting/reloading Home Assistant.
 - Optional fallback mode when no helper is used and a window is still open on restart.
 - No helper is required for normal operation, but exact reboot recovery needs a persistent helper.
+- Optional Home Assistant persistent notification for a prolonged `unknown` or `unavailable` contact that blocks restoration. Auto-dismisses when sensors recover.
 
 ### Install / update
 
 1. Import [the blueprint on GitHub](https://github.com/mrmultifunk/home-assistant-blueprints/blob/main/Blueprints/window_open_climate_off.yaml) through **Settings → Automations & scenes → Blueprints → Import blueprint**.
 2. For updates, open the blueprint's three-dot menu and choose **Re-import blueprint**.
 3. Reload automations under **Developer Tools → YAML** (or restart Home Assistant).
-4. Confirm that the imported blueprint name and description show **v1.5.0**.
+4. Confirm that the imported blueprint name and description show **v1.6.0**.
 
 **Important:** GitHub updates are not automatically installed in Home Assistant. The version shown in Home Assistant is the locally imported version.
 
-### New options in v1.5.0
+### New in v1.6.0 — unavailable sensor warnings
+
+**Warn about unavailable sensors** (default: On)
+
+When the climate device is already off and waiting to be restored, a
+`binary_sensor` remaining `unknown` or `unavailable` can block restoration.
+Enable this setting to receive **one persistent Home Assistant notification**
+for that fault episode.
+
+**Sensor warning delay** is a slider from **60 to 3600 seconds** in 60-second
+steps, defaulting to **600 seconds (10 minutes)**. The delay measures how long
+a sensor has remained in the abnormal state. Checks run at least every 30
+seconds, so the notification can arrive up to approximately 30 seconds later.
+
+The notification identifies the automation, climate entity and unavailable
+sensor(s) by friendly name and entity ID. It uses a fixed notification ID
+unique to the automation, avoiding duplicate alerts. It is dismissed
+automatically when **all affected sensors recover**, or when the climate
+session finishes or is manually overridden.
+
+**Important behavior:**
+- No alert while another selected contact is open: that contact also keeps
+  the heating off. The alert appears when an abnormal sensor is blocking
+  the return to normal operation.
+- `unknown` and `unavailable` still block restoration; this option only
+  adds diagnostics and **does not bypass a failed contact**.
+- Notifications appear in Home Assistant's notification panel, not as
+  phone push notifications.
+- The monitoring operates during an active, pending restoration only.
+  A restart with no saved previous mode (and no suitable fallback) cannot
+  reconstruct a past session to warn about it.
+- No additional helper is needed for warnings.
+
+### New options in v1.6.0
 
 **Enforce off while window is open** (default: On)
 
