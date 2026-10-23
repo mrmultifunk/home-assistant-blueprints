@@ -108,6 +108,12 @@ First explicitly versioned release of the window-open climate blueprint.
 
 ## IKEA TRÅDFRI five-button remote (Zigbee2MQTT event)
 
+### [1.2.2] - 2026-10-23
+
+- Fjernet manuelle linjeskift inde i Markdown-afsnit, punkter og links, så teksten kan udnytte den tilgængelige bredde i Home Assistant.
+- Beholdt knapdiagrammet og de danske overskrifter.
+- Kun layout og versionsnummer er ændret. Automationslogik og input-ID'er er uændrede.
+
 ### [1.2.1] - 2026-10-23
 
 - Oversat blueprintets navn, beskrivelser, knapper, omskiftervalg og
