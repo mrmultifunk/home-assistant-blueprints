@@ -230,7 +230,7 @@ actions:
           {{ saved_mode_helper != ''
              and states(saved_mode_helper) not in
                ['heat', 'cool', 'heat_cool', 'auto', 'dry', 'fan_only']
-             and states.get(saved_mode_helper) is not none }}
+             }}
     then:
       - action: input_text.set_value
         target:
