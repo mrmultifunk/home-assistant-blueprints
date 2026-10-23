@@ -2,20 +2,20 @@
 blueprint:
   name: "Window open - Climate off and restore"
   description: >
-    Turns off a climate device when a window has been
-    open for a defined time. Restores the previous
-    HVAC mode when the window is closed.
+    Turns off a climate device when any selected window or door sensor
+    has been open for a defined time. Restores the previous HVAC mode
+    only after all selected sensors are closed.
   domain: automation
 
   input:
     window_entity:
-      name: Window sensor
-      description: Window sensor controlling the climate device.
+      name: Window / door sensors
+      description: Select one or more binary sensors (windows, doors, etc.).
       selector:
         entity:
           filter:
             - domain: binary_sensor
-              device_class: window
+          multiple: true
 
     minimum_open_time:
       name: Minimum open time
@@ -37,7 +37,7 @@ blueprint:
             - domain: climate
 
 variables:
-  window_entity: !input window_entity
+  window_entities: !input window_entity
   climate_entity: !input climate_target
 
 mode: single
@@ -64,7 +64,16 @@ actions:
     target:
       entity_id: !input climate_target
 
-  - wait_template: "{{ is_state(window_entity, 'off') }}"
+  # Supports both multiple selections and existing single-sensor automations.
+  - wait_template: >
+      {% set sensors = [window_entities] if window_entities is string else window_entities %}
+      {% set ns = namespace(all_closed=true) %}
+      {% for sensor in sensors %}
+        {% if not is_state(sensor, 'off') %}
+          {% set ns.all_closed = false %}
+        {% endif %}
+      {% endfor %}
+      {{ ns.all_closed }}
 
   - condition: template
     value_template: >
