@@ -1,10 +1,18 @@
 
+# Window open - Climate off and restore
+# Version: 1.2.0
 blueprint:
-  name: "Window open - Climate off and restore"
-  description: >
-    Turns off a climate device when any selected window or door sensor
-    has been open for a defined time. Restores the previous HVAC mode
-    only after all selected sensors are closed.
+  name: "Window open - Climate off and restore (v1.2.0)"
+  description: |-
+    **Version: 1.2.0**
+
+    Turn off a climate device when any selected window or door sensor has
+    been open for the configured time. Restore the previous HVAC mode only
+    when all selected sensors are closed.
+
+    The trigger requires a sensor to change to 'on'. A sensor that is
+    already open when the automation is loaded does not trigger it.
+  author: "mrmultifunk"
   domain: automation
 
   input:
@@ -58,6 +66,7 @@ conditions:
 
 actions:
   - variables:
+      blueprint_version: "1.2.0"
       previous_hvac_mode: "{{ states(climate_entity) }}"
 
   - action: climate.turn_off
@@ -75,10 +84,12 @@ actions:
       {% endfor %}
       {{ ns.all_closed }}
 
-  - condition: template
-    value_template: >
-      {{ previous_hvac_mode in
-         (state_attr(climate_entity, 'hvac_modes') or []) }}
+  # Do not override a user or another automation that changed the mode
+  # while the window was open. The previous mode was read from the device
+  # before it was switched off, so no later hvac_modes lookup is needed.
+  - condition: state
+    entity_id: !input climate_target
+    state: "off"
 
   - action: climate.set_hvac_mode
     target:
