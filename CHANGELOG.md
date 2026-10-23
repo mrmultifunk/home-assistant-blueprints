@@ -2,6 +2,26 @@
 
 Version numbers follow Semantic Versioning: `MAJOR.MINOR.PATCH`.
 
+## [1.5.0] - 2026-10-23
+
+### Added
+- Restart and automation-reload triggers to resume waiting or complete a pending thermostat restoration.
+- Optional dedicated `input_text` helper to persist the previous HVAC mode across Home Assistant restarts. The helper uses `none` as the cleared state.
+- Configurable fallback HVAC mode for restart/reload when a contact remains open and no saved mode is available. Defaults to `none` to avoid guessing.
+- Configurable **Enforce off while window is open** policy (defaults to enabled). Detects external/manual thermostat activation both while contacts are open and during the restore countdown.
+- Automatic cancellation of pending restoration when manual override is respected.
+- Setup and scenario-test instructions in README.
+
+### Changed
+- Existing selectors, input IDs, multi-contact support, and timing sliders remain unchanged.
+- Previous-HVAC-mode restore countdown starts again after recovery instead of attempting to reconstruct lost elapsed time.
+
+### Limitations
+- Precise previous-mode recovery requires a separate input_text helper for each automation, with no fixed initial value.
+- Without a helper or chosen fallback, a previously switched-off thermostat cannot be safely restored after restart.
+- If every contact closes while Home Assistant is offline and no helper was used, the previous HVAC mode is unknowable.
+- Changing an existing automation from an older version while its thermostat is already off does not retroactively recover a lost mode.
+
 ## [1.4.1] - 2026-10-23
 
 ### Fixed
