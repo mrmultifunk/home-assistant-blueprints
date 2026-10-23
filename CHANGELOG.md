@@ -2,6 +2,16 @@
 
 Version numbers follow Semantic Versioning: `MAJOR.MINOR.PATCH`.
 
+## [1.4.0] - 2026-10-23
+
+### Changed
+- Replace the restore delay duration picker with a numeric slider from 0 to 1800 seconds in 10-second increments.
+- Use a seconds-based timeout while keeping compatibility with existing duration-map automation inputs.
+- Display version 1.4.0 in the imported blueprint name, description and automation traces.
+
+### Upgrade note
+- Re-import the blueprint in Home Assistant and select a numeric restore delay in each automation. Existing stored hour/minute/second maps are converted at runtime, but the slider editor expects a number.
+
 ## [1.3.0] - 2026-10-23
 
 ### Added
