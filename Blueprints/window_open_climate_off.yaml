@@ -1,28 +1,32 @@
 # Window open - Climate off and restore
-# Version: 1.4.1
+# Version: 1.5.0
 blueprint:
-  name: "Window open - Climate off and restore (v1.4.1)"
-  description: |-
-    **Version: 1.4.1**
-
-    Turn the climate device off when any selected door or window is open
-    longer than the configured opening delay. Restore the previous HVAC
-    mode only after ALL selected sensors have been continuously closed
-    for the configured restore delay.
-
-    Opening a door or window during the restore delay resets the timer.
-
-    Note: A Home Assistant automation reload or restart interrupts
-    pending waits and loses the saved HVAC mode.
+  name: "Window open - Climate off and restore (v1.5.0)"
   author: "mrmultifunk"
   domain: automation
+  description: |-
+    **Version: 1.5.0**
+
+    Turn off the climate device after any selected door/window stays open
+    for the minimum open time. Restore the previous HVAC mode only after
+    all selected contacts remain closed for the restore delay.
+
+    **New:** An optional input_text helper saves the previous HVAC mode
+    across Home Assistant restarts / automation reloads. Without this
+    helper, exact recovery after a restart is impossible. Optionally
+    choose a fallback HVAC mode for a restart with an open contact.
+
+    Choose whether an external/manuel climate activation during the
+    window-open period is automatically turned off again, or respected
+    as an override.
+
+    Each automation must use its OWN input_text helper if recovery is
+    enabled. Do not configure an initial value for that helper.
 
   input:
     window_entity:
       name: Window / door sensors
-      description: >
-        Select window and door contacts. Includes generic Opening
-        sensors commonly used for door/window contacts.
+      description: Select one or more contact sensors.
       selector:
         entity:
           multiple: true
@@ -36,7 +40,7 @@ blueprint:
 
     minimum_open_time:
       name: Minimum open time
-      description: Number of seconds a door or window must remain open before switching off the climate device.
+      description: Seconds a sensor must be open before climate is switched off.
       default: 12
       selector:
         number:
@@ -48,9 +52,7 @@ blueprint:
 
     restore_delay:
       name: Restore delay
-      description: >
-        Seconds all doors/windows must remain closed before restoring
-        the climate device. 0 means restore immediately.
+      description: Seconds all contacts must remain closed before restoring.
       default: 0
       selector:
         number:
@@ -67,36 +69,182 @@ blueprint:
           filter:
             - domain: climate
 
+    enforce_off:
+      name: Enforce off while window is open
+      description: >
+        On: turn the climate device off again if another automation or
+        someone turns it on before the restore delay completes.
+        Off: respect the override and cancel the pending restore.
+      default: true
+      selector:
+        boolean: {}
+
+    saved_mode_helper:
+      name: Persistent HVAC mode helper (optional)
+      description: >
+        Choose a dedicated input_text helper to remember the previous
+        HVAC mode across Home Assistant restarts. Leave empty if you do
+        not want to create a helper. Do not set an initial value.
+      default: ""
+      selector:
+        entity:
+          filter:
+            - domain: input_text
+
+    restart_fallback_mode:
+      name: Restart fallback mode (without helper)
+      description: >
+        Only used when Home Assistant starts/reloads, a window is open,
+        the climate device is off and there is no saved mode. None is
+        safest; choose Heat/Auto only if supported by your climate device.
+        This cannot recover a lost mode when all windows are already closed.
+      default: "none"
+      selector:
+        select:
+          mode: dropdown
+          options:
+            - label: "None (do not guess)"
+              value: "none"
+            - label: Heat
+              value: heat
+            - label: Auto
+              value: auto
+            - label: Heat / cool
+              value: heat_cool
+            - label: Cool
+              value: cool
+
 variables:
   window_entities: !input window_entity
   climate_entity: !input climate_target
-  # Support numeric seconds and existing automation inputs saved as a duration map.
   restore_delay_input: !input restore_delay
+  saved_mode_helper: !input saved_mode_helper
+  enforce_off: !input enforce_off
+  restart_fallback_mode: !input restart_fallback_mode
 
 mode: single
 max_exceeded: silent
 
 triggers:
   - trigger: state
+    id: contact_opened
     entity_id: !input window_entity
     to: "on"
     for:
       seconds: !input minimum_open_time
 
-conditions:
-  - condition: template
-    value_template: >
-      {{ states(climate_entity)
-         not in ['off', 'unknown', 'unavailable'] }}
+  - trigger: homeassistant
+    id: startup
+    event: start
+
+  - trigger: event
+    id: reload
+    event_type: automation_reloaded
 
 actions:
   - variables:
-      blueprint_version: "1.4.1"
-      previous_hvac_mode: "{{ states(climate_entity) }}"
+      blueprint_version: "1.5.0"
 
-  - action: climate.turn_off
-    target:
-      entity_id: !input climate_target
+  # Wait briefly for the climate integration to become available on restart.
+  - if:
+      - condition: template
+        value_template: "{{ trigger.id in ['startup', 'reload'] }}"
+    then:
+      - wait_template: >
+          {{ states(climate_entity) not in ['unknown', 'unavailable'] }}
+        timeout:
+          minutes: 2
+        continue_on_timeout: true
+
+  # Determine a mode to restore. A previously saved mode takes priority
+  # during recovery. A fresh open event snapshots the CURRENT HVAC mode.
+  - variables:
+      previous_hvac_mode: >-
+        {% set valid = ['heat', 'cool', 'heat_cool', 'auto', 'dry', 'fan_only'] %}
+        {% set device_mode = states(climate_entity) %}
+        {% set stored = states(saved_mode_helper) if saved_mode_helper else 'none' %}
+        {% set sensors = [window_entities] if window_entities is string else window_entities %}
+        {% set any_open = (expand(sensors) | selectattr('state', 'eq', 'on') | list | count) > 0 %}
+        {% if trigger.id == 'contact_opened' and device_mode in valid %}
+          {{ device_mode }}
+        {% elif stored in valid %}
+          {{ stored }}
+        {% elif trigger.id in ['startup', 'reload'] and any_open and device_mode in valid %}
+          {{ device_mode }}
+        {% elif trigger.id in ['startup', 'reload'] and any_open
+                and device_mode == 'off' and restart_fallback_mode in valid %}
+          {{ restart_fallback_mode }}
+        {% else %}
+          none
+        {% endif %}
+
+  - condition: template
+    value_template: >
+      {{ previous_hvac_mode in
+         ['heat', 'cool', 'heat_cool', 'auto', 'dry', 'fan_only'] }}
+
+  # On recovery, a current non-off mode with a previously saved mode
+  # is an external/manual activation. Respect the user's policy.
+  - if:
+      - condition: template
+        value_template: >
+          {{ trigger.id in ['startup', 'reload']
+             and saved_mode_helper != ''
+             and states(saved_mode_helper) in
+               ['heat', 'cool', 'heat_cool', 'auto', 'dry', 'fan_only']
+             and states(climate_entity) not in
+               ['off', 'unknown', 'unavailable'] }}
+    then:
+      - if:
+          - condition: template
+            value_template: >
+              {% set sensors = [window_entities] if window_entities is string else window_entities %}
+              {{ not enforce_off
+                 or (expand(sensors) | selectattr('state', 'eq', 'on') | list | count) == 0 }}
+        then:
+          - action: input_text.set_value
+            target:
+              entity_id: "{{ saved_mode_helper }}"
+            data:
+              value: ""
+          - stop: "External/manual climate activation respected during recovery."
+
+  # If the climate is active on startup with all sensors closed and
+  # no saved pending mode, there is nothing to recover.
+  - if:
+      - condition: template
+        value_template: >
+          {% set sensors = [window_entities] if window_entities is string else window_entities %}
+          {{ trigger.id in ['startup', 'reload']
+             and states(climate_entity) != 'off'
+             and (expand(sensors) | selectattr('state', 'eq', 'on') | list | count) == 0 }}
+    then:
+      - stop: "No open contact or pending restoration."
+
+  # Save the mode BEFORE switching off. A helper without an explicit
+  # initial value retains its state across restarts.
+  - if:
+      - condition: template
+        value_template: >
+          {{ saved_mode_helper != ''
+             and states(saved_mode_helper) not in
+               ['heat', 'cool', 'heat_cool', 'auto', 'dry', 'fan_only']
+             and states(saved_mode_helper) not in ['unknown', 'unavailable'] }}
+    then:
+      - action: input_text.set_value
+        target:
+          entity_id: "{{ saved_mode_helper }}"
+        data:
+          value: "{{ previous_hvac_mode }}"
+
+  - if:
+      - condition: template
+        value_template: >
+          {{ states(climate_entity) not in ['off', 'unknown', 'unavailable'] }}
+    then:
+      - action: climate.turn_off
+        target:
+          entity_id: !input climate_target
 
   - variables:
       restore_delay_seconds: >-
@@ -108,41 +256,116 @@ actions:
           {{ restore_delay_input | int(0) }}
         {% endif %}
 
-  # Each iteration waits for all sensors to close, then begins a new
-  # uninterrupted restore delay. Any sensor leaving the closed state
-  # resets that delay (including unknown / unavailable).
+  # Keep supervising the device until the restore delay has elapsed.
+  # New window-open triggers are ignored (mode: single), but all selected
+  # sensor states are observed by the wait templates below.
   - repeat:
+      while:
+        - condition: template
+          value_template: "{{ true }}"
       sequence:
         - wait_template: >
             {% set sensors = [window_entities] if window_entities is string else window_entities %}
-            {{ sensors | count > 0
-               and (expand(sensors) | selectattr('state', 'eq', 'off') | list | count)
-                   == (sensors | count) }}
+            {% set all_closed = sensors | count > 0
+               and (expand(sensors) | selectattr('state', 'eq', 'off') | list | count) == sensors | count %}
+            {{ all_closed or states(climate_entity) not in
+               ['off', 'unknown', 'unavailable'] }}
 
-        - wait_for_trigger:
-            - trigger: state
-              entity_id: !input window_entity
-              from: "off"
-          timeout:
-            seconds: "{{ restore_delay_seconds | int(0) }}"
-          continue_on_timeout: true
+        # Handle external/manual activation while waiting for closure.
+        - if:
+            - condition: template
+              value_template: >
+                {{ states(climate_entity) not in ['off', 'unknown', 'unavailable'] }}
+          then:
+            - if:
+                - condition: template
+                  value_template: "{{ enforce_off }}"
+              then:
+                - action: climate.turn_off
+                  target:
+                    entity_id: !input climate_target
+              else:
+                - if:
+                    - condition: template
+                      value_template: "{{ saved_mode_helper != '' }}"
+                  then:
+                    - action: input_text.set_value
+                      target:
+                        entity_id: "{{ saved_mode_helper }}"
+                      data:
+                        value: ""
+                - stop: "Manual/other automation override respected."
 
-      until:
-        - condition: template
-          value_template: >
-            {% set sensors = [window_entities] if window_entities is string else window_entities %}
-            {{ not wait.completed
-               and sensors | count > 0
-               and (expand(sensors) | selectattr('state', 'eq', 'off') | list | count)
-                   == (sensors | count) }}
+        # Only start the restore countdown after ALL contacts are closed.
+        - if:
+            - condition: template
+              value_template: >
+                {% set sensors = [window_entities] if window_entities is string else window_entities %}
+                {{ sensors | count > 0
+                   and (expand(sensors) | selectattr('state', 'eq', 'off') | list | count)
+                       == sensors | count }}
+          then:
+            - wait_for_trigger:
+                - trigger: state
+                  id: sensor_reopened
+                  entity_id: !input window_entity
+                  from: "off"
+                - trigger: state
+                  id: climate_activated
+                  entity_id: !input climate_target
+                  from: "off"
+              timeout:
+                seconds: "{{ restore_delay_seconds | int(0) }}"
+              continue_on_timeout: true
 
-  # Do not undo changes made manually or by another automation.
-  - condition: state
-    entity_id: !input climate_target
-    state: "off"
+            - if:
+                - condition: template
+                  value_template: >
+                    {{ wait.completed and
+                       states(climate_entity) not in ['off', 'unknown', 'unavailable'] }}
+              then:
+                - if:
+                    - condition: template
+                      value_template: "{{ enforce_off }}"
+                  then:
+                    - action: climate.turn_off
+                      target:
+                        entity_id: !input climate_target
+                  else:
+                    - if:
+                        - condition: template
+                          value_template: "{{ saved_mode_helper != '' }}"
+                      then:
+                        - action: input_text.set_value
+                          target:
+                            entity_id: "{{ saved_mode_helper }}"
+                          data:
+                            value: ""
+                    - stop: "Manual/other automation override respected."
 
-  - action: climate.set_hvac_mode
-    target:
-      entity_id: !input climate_target
-    data:
-      hvac_mode: "{{ previous_hvac_mode }}"
+            - if:
+                - condition: template
+                  value_template: >
+                    {% set sensors = [window_entities] if window_entities is string else window_entities %}
+                    {{ not wait.completed
+                       and states(climate_entity) == 'off'
+                       and sensors | count > 0
+                       and (expand(sensors) | selectattr('state', 'eq', 'off') | list | count)
+                           == sensors | count }}
+              then:
+                - action: climate.set_hvac_mode
+                  target:
+                    entity_id: !input climate_target
+                  data:
+                    hvac_mode: "{{ previous_hvac_mode }}"
+
+                - if:
+                    - condition: template
+                      value_template: "{{ saved_mode_helper != '' }}"
+                  then:
+                    - action: input_text.set_value
+                      target:
+                        entity_id: "{{ saved_mode_helper }}"
+                      data:
+                        value: ""
+                - stop: "Previous HVAC mode restored."
