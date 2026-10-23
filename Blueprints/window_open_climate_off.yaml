@@ -22,6 +22,7 @@ blueprint:
 
     Each automation must use its OWN input_text helper if recovery is
     enabled. Do not configure an initial value for that helper.
+    The helper uses "none" to mean no pending restoration.
 
   input:
     window_entity:
@@ -206,7 +207,7 @@ actions:
             target:
               entity_id: "{{ saved_mode_helper }}"
             data:
-              value: ""
+              value: "none"
           - stop: "External/manual climate activation respected during recovery."
 
   # If the climate is active on startup with all sensors closed and
@@ -229,7 +230,7 @@ actions:
           {{ saved_mode_helper != ''
              and states(saved_mode_helper) not in
                ['heat', 'cool', 'heat_cool', 'auto', 'dry', 'fan_only']
-             and states(saved_mode_helper) not in ['unknown', 'unavailable'] }}
+             and states.get(saved_mode_helper) is not none }}
     then:
       - action: input_text.set_value
         target:
@@ -293,7 +294,7 @@ actions:
                       target:
                         entity_id: "{{ saved_mode_helper }}"
                       data:
-                        value: ""
+                        value: "none"
                 - stop: "Manual/other automation override respected."
 
         # Only start the restore countdown after ALL contacts are closed.
@@ -340,7 +341,7 @@ actions:
                           target:
                             entity_id: "{{ saved_mode_helper }}"
                           data:
-                            value: ""
+                            value: "none"
                     - stop: "Manual/other automation override respected."
 
             - if:
@@ -367,5 +368,5 @@ actions:
                       target:
                         entity_id: "{{ saved_mode_helper }}"
                       data:
-                        value: ""
+                        value: "none"
                 - stop: "Previous HVAC mode restored."
