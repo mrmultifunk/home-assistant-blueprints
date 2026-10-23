@@ -2,91 +2,55 @@
 
 Home Assistant automation blueprints maintained by **mrmultifunk**.
 
-## IKEA TRÅDFRI 5-button remote (Zigbee2MQTT event)
+## IKEA TRÅDFRI – FUGA-fjernbetjening (Zigbee2MQTT)
 
-**Current version: v1.2.0**
+**Aktuel version: v1.2.1**
 
-[Open the blueprint](Blueprints/ikea_tradfri_5_button_event.yaml) ·
-[Import in Home Assistant](https://github.com/mrmultifunk/home-assistant-blueprints/blob/main/Blueprints/ikea_tradfri_5_button_event.yaml)
+[Se blueprintet](Blueprints/ikea_tradfri_5_button_event.yaml) ·
+[Importer i Home Assistant](https://github.com/mrmultifunk/home-assistant-blueprints/blob/main/Blueprints/ikea_tradfri_5_button_event.yaml)
 
-This blueprint supports IKEA E1524/E1810 five-button "hockey puck" remotes,
-including [FUGA-converted remotes](https://www.printables.com/model/93848-zigbee-til-danske-kontakter).
-It uses the **Zigbee2MQTT event entity** already available in Home Assistant
-(e.g. `event.lea_fjernbetjening_1_vaeg_action`), rather than deprecated
-legacy action sensors.
+Blueprint til den runde IKEA TRÅDFRI E1524/E1810-fjernbetjening,
+som er bygget om til [dansk FUGA-design](https://www.printables.com/model/93848-zigbee-til-danske-kontakter).
+Bruger Zigbee2MQTT's `event.*_action`-entitet og kræver ingen ekstra hjælpere.
 
-### Three selector positions
-
-The small physical slide switch changes which function is behind the
-**Top Left** and **Middle** buttons. Choose the matching layout using
-**FUGA selector position** in the blueprint. **Middle** is the default.
-
-| Physical key | Left | Middle (default) | Right |
-| --- | --- | --- | --- |
-| Top left | Power (`toggle`) | Left arrow (`arrow_left_click`) | Power (`toggle`) |
-| Top right | Right arrow (`arrow_right_click`) | Right arrow (`arrow_right_click`) | Right arrow (`arrow_right_click`) |
-| Middle | Left arrow (`arrow_left_click`) | Power (`toggle`) | Link/pair — not programmable |
-| Bottom left | Brighter (`brightness_up_click`) | Brighter | Brighter |
-| Bottom right | Dimmer (`brightness_down_click`) | Dimmer | Dimmer |
+### Knapper – standardpositionen (midten)
 
 ```text
-LEFT                 MIDDLE (DEFAULT)      RIGHT
-┌───────┬───────┐    ┌───────┬───────┐    ┌───────┬───────┐
-│  ⏻    │   ▶   │    │   ◀   │   ▶   │    │   ⏻   │   ▶   │
-├───────┴───────┤    ├───────┴───────┤    ├───────┴───────┤
-│       ◀       │    │       ⏻       │    │     LINK      │
-├───────┬───────┤    ├───────┬───────┤    ├───────┬───────┤
-│  ☀+   │  ☼−   │    │  ☀+   │  ☼−   │    │  ☀+   │  ☼−   │
-└───────┴───────┘    └───────┴───────┘    └───────┴───────┘
+┌─────────────┬─────────────┐
+│  ◀ VENSTRE  │  HØJRE ▶    │
+├─────────────┴─────────────┤
+│       ⏻ TÆND/SLUK        │
+├─────────────┬─────────────┤
+│  ☀ LYSERE   │  MØRKERE ☼  │
+└─────────────┴─────────────┘
 ```
 
-**Important:** The action inputs continue to refer to the **physical
-position** (Top Left, Top Right, Middle, Bottom Left, Bottom Right),
-regardless of which hardware function is behind that position. v1.2.0
-normalizes incoming Z2M events before choosing an action:
+### Valg af omskifterposition
 
-- In **Left** position, `toggle` drives the Top Left action and
-  `arrow_left_click` drives the Middle action. Related holds are
-  swapped. A new optional `center_release_action` is available for
-  the Middle button's `arrow_left_release` event.
-- In **Middle** position, events are unchanged from v1.1.0.
-- In **Right** position, `toggle` drives the Top Left action, while
-  the center Link/pair button is not treated as a configurable
-  Zigbee2MQTT event. `arrow_left_*` events are ignored in this
-  position.
+- **Midten (standard):** Layoutet ovenfor. Venstre pil øverst til
+  venstre og tænd/sluk i midten.
+- **Venstre:** Tænd/sluk flyttes til øverst venstre, mens venstre
+  pil flyttes til midten. Resten ændres ikke.
+- **Højre:** Tænd/sluk er øverst venstre. Midterknappen er
+  link/parring og kan normalt ikke styre en automation.
+  Resten ændres ikke.
 
-The linked/pair button is **hardware pairing**, rather than an additional
-standard action reported by Zigbee2MQTT. The official [E1524/E1810
-documentation](https://www.zigbee2mqtt.io/devices/E1524_E1810.html)
-describes pairing separately from button action events.
+Handlingsfelterne refererer altid til **fysisk placering**.
+Blueprintet ommapper relevante Zigbee2MQTT-events automatisk efter
+den valgte omskifterposition. Korte tryk, lange tryk og slip er
+konfigurerbare i deres respektive sektioner, og ubrugte handlinger
+kan stå tomme.
 
-**The table is inferred from the provided switch image.** Verify your
-particular conversion by checking the `event_type` attribute of
-`event.lea_fjernbetjening_1_vaeg_action` under
-**Developer Tools → States**, pressing one physical button at a time.
-If your conversion behaves differently, don't assume the mapping is correct.
+**Bemærk:** Layoutet er udledt af billederne af FUGA-fronten,
+ikke af en måling på den konkrete ombyggede fjernbetjening.
+Bekræft gerne `event_type` under **Udviklerværktøjer → Tilstande**
+for `event.lea_fjernbetjening_1_vaeg_action`, mens du trykker
+på knapperne én efter én.
 
-Existing click and hold action-input identifiers are unchanged. Your
-existing automations keep their settings with the default Middle
-selector position.
+### Eksempel: Leas vægkontakt
 
-Any Home Assistant action sequence can be configured independently for
-each button. Unconfigured buttons do nothing. The advanced hold and release
-sections are collapsed by default. The blueprint intentionally provides
-no automatic toggles or other hidden device actions.
-
-**Important:** The center button may emit both `toggle` and `toggle_hold`
-on a long press, depending on firmware. A hold action runs **once**
-when the hold event arrives; continuous dimming needs a separate script
-or matching press/release action. Button events are processed in a
-**queue**, rather than with restart mode, so a release event cannot cancel
-a click action already in progress.
-
-### Example: Lea wall remote
-
-The following shows how to replace the current unconditional light toggle
-with individual button actions. Save as a new automation and disable the
-old one only after the new automation works.
+Her er en eksempelautomation, hvor du selv kan ændre handlingerne.
+Den eksisterende automation ændres ikke automatisk.
 
 ```yaml
 alias: "Lea fjernbetjening på væg"
@@ -120,20 +84,26 @@ use_blueprint:
           brightness_step_pct: -10
 ```
 
-This mapping is only an **example**; it is not applied to your current
-automation. It is different from the provided automation, which toggled
-a separate light device unconditionally on *every* remote event.
+*Eksemplet er kun vejledende:* Det tildeler særskilte handlinger
+til hver fysisk knap i standardpositionen. Det retter også den
+utilsigtede `light.toggle`, der i den oprindelige automation
+blev udført ved ethvert knaptryk.
 
-### Setup
+### Installation og opdatering
 
-1. Import the GitHub YAML through **Settings → Automations & Scenes → Blueprints → Import blueprint**.
-2. Create an automation from **IKEA TRÅDFRI 5-button – FUGA layout (Z2M) v1.2.0**.
-3. Pick the remote's `event.*_action` entity, and choose the matching **FUGA selector position** (Middle is default).
-4. Fill in actions for the physical buttons and save.
-5. Inspect **Traces** if a button action does not run.
+1. Importér YAML-filen via **Indstillinger → Automatiseringer og scener → Blueprints → Importér blueprint**.
+2. Opret eller åbn en automation med **IKEA TRÅDFRI – FUGA-fjernbetjening (Zigbee2MQTT) v1.2.1**.
+3. Vælg fjernbetjeningens `event.*_action`-entitet og den fysiske omskifterposition.
+4. Tildel handlinger til knapperne. Gem og afprøv hver knap.
+5. Se automationssporingen, hvis en handling ikke bliver udført.
 
-Requires Home Assistant 2024.6.0 or newer (blueprint input sections),
-Zigbee2MQTT and the Home Assistant event entity for the controller.
+**Kompatibilitet:** Home Assistant 2024.6.0 eller nyere,
+Zigbee2MQTT og en `event.*_action`-entitet.
+
+**Ved opdatering:** De samme tekniske input-ID'er og events bruges
+fortsat som i v1.2.0. Eksisterende handlinger og den valgte
+omskifterposition bliver bevaret. En genimport er nødvendig
+for at få de danske tekster.
 
 ---
 
