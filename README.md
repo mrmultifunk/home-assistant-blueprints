@@ -2,6 +2,98 @@
 
 Home Assistant automation blueprints maintained by **mrmultifunk**.
 
+## IKEA TRÅDFRI 5-button remote (Zigbee2MQTT event)
+
+**Current version: v1.0.0**
+
+[Open the blueprint](Blueprints/ikea_tradfri_5_button_event.yaml) ·
+[Import in Home Assistant](https://github.com/mrmultifunk/home-assistant-blueprints/blob/main/Blueprints/ikea_tradfri_5_button_event.yaml)
+
+This blueprint supports IKEA E1524/E1810 five-button "hockey puck" remotes,
+including [FUGA-converted remotes](https://www.printables.com/model/93848-zigbee-til-danske-kontakter).
+It uses the **Zigbee2MQTT event entity** already available in Home Assistant
+(e.g. `event.lea_fjernbetjening_1_vaeg_action`), rather than deprecated
+legacy action sensors.
+
+### Button actions
+
+| Button | Zigbee2MQTT event | Configurable input |
+| --- | --- | --- |
+| Center | `toggle` | Center button |
+| Up | `brightness_up_click` | Brightness up |
+| Down | `brightness_down_click` | Brightness down |
+| Left | `arrow_left_click` | Left arrow |
+| Right | `arrow_right_click` | Right arrow |
+| Center hold | `toggle_hold` | Center hold (optional) |
+| Other holds/releases | `*_hold`, `*_release` | Advanced sections (optional) |
+
+Any Home Assistant action sequence can be configured independently for
+each button. Unconfigured buttons do nothing. The advanced hold and release
+sections are collapsed by default. The blueprint intentionally provides
+no automatic toggles or other hidden device actions.
+
+**Important:** The center button may emit both `toggle` and `toggle_hold`
+on a long press, depending on firmware. A hold action runs **once**
+when the hold event arrives; continuous dimming needs a separate script
+or matching press/release action. Button events are processed in a
+**queue**, rather than with restart mode, so a release event cannot cancel
+a click action already in progress.
+
+### Example: Lea wall remote
+
+The following shows how to replace the current unconditional light toggle
+with individual button actions. Save as a new automation and disable the
+old one only after the new automation works.
+
+```yaml
+alias: "Lea fjernbetjening på væg"
+use_blueprint:
+  path: mrmultifunk/ikea_tradfri_5_button_event.yaml
+  input:
+    remote_event: event.lea_fjernbetjening_1_vaeg_action
+    center_click_action:
+      - action: switch.toggle
+        target:
+          entity_id: switch.adaptive_lighting_sleep_mode_lea
+    arrow_left_click_action:
+      - action: light.toggle
+        target:
+          entity_id: light.lea_loftslys_lampe
+    arrow_right_click_action:
+      - action: light.toggle
+        target:
+          entity_id: light.lea_loftslys_lampe
+    brightness_up_click_action:
+      - action: light.turn_on
+        target:
+          entity_id: light.lea_loftslys_lampe
+        data:
+          brightness_step_pct: 10
+    brightness_down_click_action:
+      - action: light.turn_on
+        target:
+          entity_id: light.lea_loftslys_lampe
+        data:
+          brightness_step_pct: -10
+```
+
+This mapping is only an **example**; it is not applied to your current
+automation. It is different from the provided automation, which toggled
+a separate light device unconditionally on *every* remote event.
+
+### Setup
+
+1. Import the GitHub YAML through **Settings → Automations & Scenes → Blueprints → Import blueprint**.
+2. Create an automation from **IKEA TRÅDFRI 5-button remote (Z2M event) v1.0.0**.
+3. Pick the remote's `event.*_action` entity.
+4. Fill in actions for the desired buttons and save.
+5. Inspect **Traces** if a button action does not run.
+
+Requires Home Assistant 2024.6.0 or newer (blueprint input sections),
+Zigbee2MQTT and the Home Assistant event entity for the controller.
+
+---
+
 ## Window open - Climate off and restore
 
 **Current version: v1.6.1**
