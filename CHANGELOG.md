@@ -108,6 +108,25 @@ First explicitly versioned release of the window-open climate blueprint.
 
 ## IKEA TRÅDFRI five-button remote (Zigbee2MQTT event)
 
+### [1.2.0] - 2026-10-23
+
+- Add **FUGA selector position** dropdown with **Left**, **Middle
+  (default)** and **Right** to match the three mechanical slide-switch
+  positions shown on the FUGA conversion.
+- Route button clicks, holds and releases to actions by the **physical
+  position** of the FUGA button rather than a fixed Zigbee event.
+- Left: Power at Top Left and Left arrow at Middle (swap the two event
+  functions compared with Middle).
+- Middle: Preserve the v1.1.0 event mapping and existing automations.
+- Right: Power at Top Left, Link/pair button at Middle (not a standard
+  Zigbee2MQTT programmable action). Ignore displaced arrow-left events.
+- Add optional `center_release_action` for the Middle button's
+  arrow-left release in Left mode.
+- Preserve all 14 previously existing input IDs with their configurations.
+  The new position input defaults to `middle` and requires no migration.
+- Clearly document that the mappings are inferred from the pictured
+  hardware and should be verified using the remote's event entity.
+
 ### [1.1.0] - 2026-10-23
 
 - Organize short-press inputs into **TOP (◀/▶)**, **MIDDLE (⏻)** and
