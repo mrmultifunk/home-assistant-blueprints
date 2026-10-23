@@ -4,7 +4,7 @@ Home Assistant automation blueprints maintained by **mrmultifunk**.
 
 ## IKEA TRÅDFRI – FUGA-fjernbetjening (Zigbee2MQTT)
 
-**Aktuel version: v1.2.3**
+**Aktuel version: v1.2.4**
 
 [Se blueprintet](Blueprints/ikea_tradfri_5_button_event.yaml) ·
 [Importer i Home Assistant](https://github.com/mrmultifunk/home-assistant-blueprints/blob/main/Blueprints/ikea_tradfri_5_button_event.yaml)
@@ -94,6 +94,15 @@ blev udført ved ethvert knaptryk.
 Blueprintet har **ingen handlinger som standard**, og handlinger fra
 en tidligere automation overføres ikke automatisk.
 
+Fra **v1.2.4** viser fjernbetjeningsvælgeren kun
+`event`-entiteter fra **MQTT-integrationen**, så eksempelvis UniFi Protect
+motion-events ikke kan vælges ved en fejl. Zigbee2MQTT-enheder, der er
+oprettet gennem MQTT Discovery, vises fortsat.
+
+Hvis en automation modtager en ukendt `event_type`, afslutter den
+nu med en forklaring i **Sporing**. Variablerne `raw_button_event`
+og `button_event` viser, hvad der blev modtaget og ommappet.
+
 1. Kontrollér at automationsinputtet er
    `event.lea_fjernbetjening_1_vaeg_action`.
 2. Vælg **Omskifterens position** svarende til den fysiske kontakt
@@ -107,14 +116,14 @@ en tidligere automation overføres ikke automatisk.
    `event_type` opdateres i **Udviklerværktøjer → Tilstande**
    ved knaptryk.
 
-Fra **v1.2.3** følger event-triggeren Zigbee2MQTT's eksempel med
+Fra **v1.2.4** følger event-triggeren Zigbee2MQTT's eksempel med
 `to: ~` på event-entiteten, og den ekstra sammenligning af
 tidsstempler er fjernet.
 
 ### Installation og opdatering
 
 1. Importér YAML-filen via **Indstillinger → Automatiseringer og scener → Blueprints → Importér blueprint**.
-2. Opret eller åbn en automation med **IKEA TRÅDFRI – FUGA-fjernbetjening (Zigbee2MQTT) v1.2.3**.
+2. Opret eller åbn en automation med **IKEA TRÅDFRI – FUGA-fjernbetjening (Zigbee2MQTT) v1.2.4**.
 3. Vælg fjernbetjeningens `event.*_action`-entitet og den fysiske omskifterposition.
 4. Tildel handlinger til knapperne. Gem og afprøv hver knap.
 5. Se automationssporingen, hvis en handling ikke bliver udført.
