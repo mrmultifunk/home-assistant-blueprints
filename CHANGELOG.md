@@ -108,6 +108,18 @@ First explicitly versioned release of the window-open climate blueprint.
 
 ## IKEA TRÅDFRI five-button remote (Zigbee2MQTT event)
 
+### [1.1.0] - 2026-10-23
+
+- Organize short-press inputs into **TOP (◀/▶)**, **MIDDLE (⏻)** and
+  **BOTTOM (☀+ / ☼−)** sections reflecting the pictured FUGA face.
+- Label hold/release inputs using the same physical positions.
+- Add physical key diagram, exact Zigbee2MQTT event mapping and
+  a verification guide to the blueprint description and README.
+- Preserve all 14 action input keys, triggers and action handling.
+  Existing automations retain their configuration.
+- The physical mapping is based on the face symbols and must be
+  verified against the individual converted remote's `event_type`.
+
 ### [1.0.0] - 2026-10-23
 
 - New `Blueprints/ikea_tradfri_5_button_event.yaml` automation blueprint.
