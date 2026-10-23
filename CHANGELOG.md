@@ -2,6 +2,13 @@
 
 Version numbers follow Semantic Versioning: `MAJOR.MINOR.PATCH`.
 
+## [1.4.1] - 2026-10-23
+
+### Fixed
+- Door/window sensor picker now also includes `opening` binary sensors, commonly used for contact sensors.
+- Use separate entity selector filter entries for `door`, `window`, and `opening` to improve compatibility with Home Assistant's entity picker.
+- Keep multiple selection and the restore delay slider unchanged.
+
 ## [1.4.0] - 2026-10-23
 
 ### Changed
