@@ -1,49 +1,46 @@
 # IKEA TRÅDFRI E1524/E1810 Zigbee2MQTT event-based 5-button remote
 # FUGA wall switch physical button mapping (as pictured).
-# Version: 1.1.0
+# Version: 1.2.0
 blueprint:
-  name: "IKEA TRÅDFRI 5-button – FUGA layout (Z2M) v1.1.0"
+  name: "IKEA TRÅDFRI 5-button – FUGA layout (Z2M) v1.2.0"
   description: |-
-    **IKEA TRÅDFRI 5-button / FUGA** · **v1.1.0**
+    **IKEA TRÅDFRI 5-button / FUGA** · **v1.2.0**
 
-    Configure each action by the **physical position** of the button
-    on the FUGA-style wall switch instead of the original round puck.
+    Assign actions by **physical button position** on the FUGA switch.
+    Choose which position the small mechanical selector is set to.
 
-    ### Physical button layout
+    ### Selector position
 
-    ```text
-      ┌────────────┬────────────┐
-      │ ◀ TOP LEFT │ TOP RIGHT ▶│
-      ├────────────┴────────────┤
-      │       ⏻ POWER          │
-      ├────────────┬────────────┤
-      │ ☀+ BRIGHTER│ DIMMER ☼−  │
-      └────────────┴────────────┘
-    ```
+    | Button | Left | **Middle (default)** | Right |
+    | --- | --- | --- | --- |
+    | Top left | ⏻ Power | ◀ Left | ⏻ Power |
+    | Top right | ▶ Right | ▶ Right | ▶ Right |
+    | Middle | ◀ Left | ⏻ Power | 🔗 Link/pair |
+    | Bottom left | ☀ Brighter | ☀ Brighter | ☀ Brighter |
+    | Bottom right | ☼ Dimmer | ☼ Dimmer | ☼ Dimmer |
 
-    ### Zigbee2MQTT mapping
+    The selected position remaps Zigbee2MQTT events automatically,
+    including relevant hold/release events. **Your button actions
+    stay attached to the physical locations**, not to event names.
 
-    - **Top left ◀** → `arrow_left_click`
-    - **Top right ▶** → `arrow_right_click`
-    - **Middle ⏻** → `toggle`
-    - **Bottom left ☀+** → `brightness_up_click`
-    - **Bottom right ☼−** → `brightness_down_click`
+    ### Notes
 
-    Open the advanced sections for optional hold/release actions.
-    All buttons are independently configurable; unused actions are
-    ignored. No helpers are required.
+    - **Middle** matches the previous blueprint and is the default.
+    - **Left** swaps the Top Left and Middle functions.
+    - **Right** puts Power at Top Left; the center 🔗 button is
+      intended for hardware pairing and normally emits no
+      Zigbee2MQTT action that an automation can configure.
+    - All five short-press action inputs stay compatible with v1.1.0.
+      The new optional Middle Release action is only used in Left mode.
+    - Hold/release actions are in the collapsed advanced sections.
+      The toggle button can emit both `toggle` and `toggle_hold`.
 
-    **Important:** The mapping above follows the printed symbols.
-    Check the `event_type` attribute of your remote's
-    `event.*_action` entity to verify the actual physical mapping
-    on your particular 3D-printed conversion.
+    **Verify your conversion:** The three layouts are interpreted from
+    the symbols on the supplied image. Check each button's `event_type`
+    in Home Assistant before relying on the mapping.
 
-    > The center button can emit both `toggle` and `toggle_hold`
-    > during one long press. Hold actions fire once per event and
-    > are not continuous brightness loops.
-
-    [FUGA conversion](https://www.printables.com/model/93848-zigbee-til-danske-kontakter)
-    · [Supported Zigbee2MQTT actions](https://www.zigbee2mqtt.io/devices/E1524_E1810.html)
+    [Printables FUGA conversion](https://www.printables.com/model/93848-zigbee-til-danske-kontakter)
+    · [Zigbee2MQTT E1524/E1810 actions](https://www.zigbee2mqtt.io/devices/E1524_E1810.html)
   author: "mrmultifunk"
   domain: automation
   homeassistant:
@@ -62,14 +59,31 @@ blueprint:
               filter:
                 - domain: event
 
+        switch_position:
+          name: "FUGA selector position"
+          description: >
+            Match the small physical slide switch on the FUGA conversion.
+            Middle is the default and uses the original mapping.
+          default: middle
+          selector:
+            select:
+              mode: dropdown
+              options:
+                - label: "Left – Power top left, Left arrow in middle"
+                  value: left
+                - label: "Middle (default) – Left arrow top left, Power in middle"
+                  value: middle
+                - label: "Right – Power top left, Link/pair in middle"
+                  value: right
+
     top_row:
-      name: "1 · TOP — Arrow keys (◀ ▶)"
+      name: "1 · TOP — Left and right buttons"
       icon: mdi:arrow-left-right
-      description: "Left and right halves of the upper rocker."
+      description: "Physical upper-left and upper-right buttons; the symbols depend on selector position."
       input:
         arrow_left_click_action:
-          name: "TOP LEFT · ◀ Arrow"
-          description: "Zigbee2MQTT event: `arrow_left_click`. Leave empty to ignore."
+          name: "TOP LEFT · Button"
+          description: "Left arrow in Middle mode; Power in Left/Right mode. Leave empty to ignore."
           default: []
           selector:
             action: {}
@@ -82,13 +96,13 @@ blueprint:
             action: {}
  
     middle_row:
-      name: "2 · MIDDLE — Power (⏻)"
+      name: "2 · MIDDLE — Center button"
       icon: mdi:power
-      description: "Single wide button in the middle."
+      description: "Power in Middle mode; Left arrow in Left mode; pairing/link button in Right mode."
       input:
         center_click_action:
-          name: "MIDDLE · ⏻ Power"
-          description: "Zigbee2MQTT event: `toggle`. Leave empty to ignore."
+          name: "MIDDLE · Button"
+          description: "Power in Middle mode; Left arrow in Left mode. Not programmable in Right mode."
           default: []
           selector:
             action: {}
@@ -119,8 +133,8 @@ blueprint:
       collapsed: true
       input:
         arrow_left_hold_action:
-          name: "TOP LEFT · ◀ Hold"
-          description: "Zigbee2MQTT event: `arrow_left_hold`. Leave empty to ignore."
+          name: "TOP LEFT · Hold"
+          description: "Left-arrow hold (Middle mode) or Power hold (Left/Right modes)."
           default: []
           selector:
             action: {}
@@ -133,8 +147,8 @@ blueprint:
             action: {}
 
         center_hold_action:
-          name: "MIDDLE · ⏻ Hold"
-          description: "Zigbee2MQTT event: `toggle_hold`. Leave empty to ignore."
+          name: "MIDDLE · Hold"
+          description: "Power hold (Middle) or Left-arrow hold (Left). Not available in Right mode."
           default: []
           selector:
             action: {}
@@ -160,8 +174,15 @@ blueprint:
       collapsed: true
       input:
         arrow_left_release_action:
-          name: "TOP LEFT · ◀ Release"
-          description: "Zigbee2MQTT event: `arrow_left_release`. Leave empty to ignore."
+          name: "TOP LEFT · Release"
+          description: "Left-arrow release in Middle mode only; Power has no release event."
+          default: []
+          selector:
+            action: {}
+
+        center_release_action:
+          name: "MIDDLE · Release (Left selector only)"
+          description: "Left-arrow release from the middle button; available only in Left mode."
           default: []
           selector:
             action: {}
@@ -187,6 +208,9 @@ blueprint:
           selector:
             action: {}
 
+variables:
+  switch_position: !input switch_position
+
 mode: queued
 max: 20
 max_exceeded: silent
@@ -205,8 +229,30 @@ conditions:
 
 actions:
   - variables:
-      blueprint_version: "1.1.0"
-      button_event: "{{ trigger.to_state.attributes.get('event_type', '') if trigger.to_state else '' }}"
+      blueprint_version: "1.2.0"
+      raw_button_event: "{{ trigger.to_state.attributes.get('event_type', '') if trigger.to_state else '' }}"
+      # Normalize the hardware event to a logical physical FUGA position.
+      # Existing action input keys retain their meanings in Middle mode.
+      # Right-center is the physical link/pairing button (no action event).
+      button_event: >-
+        {% set ev = trigger.to_state.attributes.get('event_type', '') if trigger.to_state else '' -%}
+        {% set left_map = {
+          'toggle': 'arrow_left_click',
+          'toggle_hold': 'arrow_left_hold',
+          'arrow_left_click': 'toggle',
+          'arrow_left_hold': 'toggle_hold',
+          'arrow_left_release': 'middle_release'
+        } -%}
+        {% set right_map = {
+          'toggle': 'arrow_left_click',
+          'toggle_hold': 'arrow_left_hold',
+          'arrow_left_click': '',
+          'arrow_left_hold': '',
+          'arrow_left_release': ''
+        } -%}
+        {{ left_map.get(ev, ev) if switch_position == 'left'
+           else right_map.get(ev, ev) if switch_position == 'right'
+           else ev }}
 
   - choose:
       - conditions:
@@ -261,6 +307,10 @@ actions:
           - condition: template
             value_template: "{{ button_event == 'arrow_left_release' }}"
         sequence: !input arrow_left_release_action
+      - conditions:
+          - condition: template
+            value_template: "{{ button_event == 'middle_release' }}"
+        sequence: !input center_release_action
       - conditions:
           - condition: template
             value_template: "{{ button_event == 'arrow_right_release' }}"
