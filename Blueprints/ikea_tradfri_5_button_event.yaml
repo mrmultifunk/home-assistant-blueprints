@@ -1,46 +1,45 @@
-# IKEA TRÅDFRI E1524/E1810 Zigbee2MQTT event-based 5-button remote
-# FUGA wall switch physical button mapping (as pictured).
-# Version: 1.2.0
+# IKEA TRÅDFRI E1524/E1810 – FUGA-konvertering til Zigbee2MQTT
+# Version: 1.2.1
 blueprint:
-  name: "IKEA TRÅDFRI 5-button – FUGA layout (Z2M) v1.2.0"
+  name: "IKEA TRÅDFRI – FUGA-fjernbetjening (Zigbee2MQTT) v1.2.1"
   description: |-
-    **IKEA TRÅDFRI 5-button / FUGA** · **v1.2.0**
+    **IKEA TRÅDFRI · FUGA-fjernbetjening · v1.2.1**
 
-    Assign actions by **physical button position** on the FUGA switch.
-    Choose which position the small mechanical selector is set to.
+    Vælg selv, hvad hver knap på din FUGA-kontakt skal gøre.
+    Blueprintet understøtter **alle tre positioner** på den lille
+    mekaniske omskifter. **Midten er standard.**
 
-    ### Selector position
+    ### Knapper – omskifter i midten (standard)
 
-    | Button | Left | **Middle (default)** | Right |
-    | --- | --- | --- | --- |
-    | Top left | ⏻ Power | ◀ Left | ⏻ Power |
-    | Top right | ▶ Right | ▶ Right | ▶ Right |
-    | Middle | ◀ Left | ⏻ Power | 🔗 Link/pair |
-    | Bottom left | ☀ Brighter | ☀ Brighter | ☀ Brighter |
-    | Bottom right | ☼ Dimmer | ☼ Dimmer | ☼ Dimmer |
+    ```text
+    ┌─────────────┬─────────────┐
+    │  ◀ VENSTRE  │  HØJRE ▶    │
+    ├─────────────┴─────────────┤
+    │       ⏻ TÆND/SLUK        │
+    ├─────────────┬─────────────┤
+    │  ☀ LYSERE   │  MØRKERE ☼  │
+    └─────────────┴─────────────┘
+    ```
 
-    The selected position remaps Zigbee2MQTT events automatically,
-    including relevant hold/release events. **Your button actions
-    stay attached to the physical locations**, not to event names.
+    ### De andre omskifterpositioner
 
-    ### Notes
+    - **Venstre:** Øverst venstre er **tænd/sluk**. Midterknappen
+      er **venstre pil**. De øvrige knapper er uændrede.
+    - **Højre:** Øverst venstre er **tænd/sluk**. Midterknappen
+      er **link/parring** og kan normalt ikke bruges til en
+      automation. De øvrige knapper er uændrede.
 
-    - **Middle** matches the previous blueprint and is the default.
-    - **Left** swaps the Top Left and Middle functions.
-    - **Right** puts Power at Top Left; the center 🔗 button is
-      intended for hardware pairing and normally emits no
-      Zigbee2MQTT action that an automation can configure.
-    - All five short-press action inputs stay compatible with v1.1.0.
-      The new optional Middle Release action is only used in Left mode.
-    - Hold/release actions are in the collapsed advanced sections.
-      The toggle button can emit both `toggle` and `toggle_hold`.
+    Handlingerne er knyttet til **knappernes fysiske placering**.
+    Blueprintet tilpasser Zigbee2MQTT-hændelserne efter den valgte
+    omskifterposition. Du kan tilføje korte og lange tryk samt
+    slip-handlinger. Ubrugte handlinger kan stå tomme.
 
-    **Verify your conversion:** The three layouts are interpreted from
-    the symbols on the supplied image. Check each button's `event_type`
-    in Home Assistant before relying on the mapping.
+    > **Bemærk:** Omskifterens position skal vælges manuelt.
+    > Kontroller gerne hver knaps `event_type` i Home Assistant,
+    > da den mekaniske mapping er udledt af FUGA-frontens symboler.
 
-    [Printables FUGA conversion](https://www.printables.com/model/93848-zigbee-til-danske-kontakter)
-    · [Zigbee2MQTT E1524/E1810 actions](https://www.zigbee2mqtt.io/devices/E1524_E1810.html)
+    [FUGA-modellen på Printables](https://www.printables.com/model/93848-zigbee-til-danske-kontakter)
+    · [Zigbee2MQTT – understøttede hændelser](https://www.zigbee2mqtt.io/devices/E1524_E1810.html)
   author: "mrmultifunk"
   domain: automation
   homeassistant:
@@ -48,162 +47,160 @@ blueprint:
 
   input:
     remote:
-      name: "Remote"
+      name: "Fjernbetjening og omskifter"
       icon: mdi:remote
       input:
         remote_event:
-          name: "Zigbee2MQTT remote event entity"
-          description: "Select the event entity ending in `_action`, e.g. `event.lea_fjernbetjening_1_vaeg_action`."
+          name: "Fjernbetjeningens hændelsesentitet"
+          description: "Vælg Zigbee2MQTT-entiteten der slutter på _action, f.eks. event.lea_fjernbetjening_1_vaeg_action."
           selector:
             entity:
               filter:
                 - domain: event
 
         switch_position:
-          name: "FUGA selector position"
-          description: >
-            Match the small physical slide switch on the FUGA conversion.
-            Middle is the default and uses the original mapping.
+          name: "Omskifterens position"
+          description: "Vælg samme position som den lille fysiske omskifter. Midten er standard."
           default: middle
           selector:
             select:
               mode: dropdown
               options:
-                - label: "Left – Power top left, Left arrow in middle"
+                - label: "Venstre – tænd/sluk øverst venstre, venstre pil i midten"
                   value: left
-                - label: "Middle (default) – Left arrow top left, Power in middle"
+                - label: "Midten (standard) – venstre pil øverst, tænd/sluk i midten"
                   value: middle
-                - label: "Right – Power top left, Link/pair in middle"
+                - label: "Højre – tænd/sluk øverst venstre, link/parring i midten"
                   value: right
 
     top_row:
-      name: "1 · TOP — Left and right buttons"
+      name: "1 · Øverst – venstre og højre"
       icon: mdi:arrow-left-right
-      description: "Physical upper-left and upper-right buttons; the symbols depend on selector position."
+      description: "De to øverste knapper. Funktionen af øverst venstre afhænger af omskifterens position."
       input:
         arrow_left_click_action:
-          name: "TOP LEFT · Button"
-          description: "Left arrow in Middle mode; Power in Left/Right mode. Leave empty to ignore."
+          name: "ØVERST VENSTRE · Kort tryk"
+          description: "Venstre pil i midterposition; tænd/sluk i venstre og højre position."
           default: []
           selector:
             action: {}
 
         arrow_right_click_action:
-          name: "TOP RIGHT · ▶ Arrow"
-          description: "Zigbee2MQTT event: `arrow_right_click`. Leave empty to ignore."
+          name: "ØVERST HØJRE · ▶ Kort tryk"
+          description: "Højre pil i alle tre positioner."
           default: []
           selector:
             action: {}
- 
+
     middle_row:
-      name: "2 · MIDDLE — Center button"
+      name: "2 · Midten – midterknappen"
       icon: mdi:power
-      description: "Power in Middle mode; Left arrow in Left mode; pairing/link button in Right mode."
+      description: "Tænd/sluk i midterposition, venstre pil i venstre position. Link/parring i højre position."
       input:
         center_click_action:
-          name: "MIDDLE · Button"
-          description: "Power in Middle mode; Left arrow in Left mode. Not programmable in Right mode."
+          name: "MIDTEN · Kort tryk"
+          description: "Tænd/sluk i midterposition, venstre pil i venstre position. Ingen programmerbar handling i højre position."
           default: []
           selector:
             action: {}
- 
+
     bottom_row:
-      name: "3 · BOTTOM — Brightness (☀+ / ☼−)"
+      name: "3 · Nederst – lysstyrke"
       icon: mdi:brightness-6
-      description: "Large sun on the left, small sun on the right."
+      description: "Stor sol til venstre (lysere), lille sol til højre (mørkere)."
       input:
         brightness_up_click_action:
-          name: "BOTTOM LEFT · ☀+ Brighter"
-          description: "Zigbee2MQTT event: `brightness_up_click`. Leave empty to ignore."
+          name: "NEDERST VENSTRE · ☀ Lysere"
+          description: "Lysstyrke op – kort tryk i alle tre positioner."
           default: []
           selector:
             action: {}
 
         brightness_down_click_action:
-          name: "BOTTOM RIGHT · ☼− Dimmer"
-          description: "Zigbee2MQTT event: `brightness_down_click`. Leave empty to ignore."
+          name: "NEDERST HØJRE · ☼ Mørkere"
+          description: "Lysstyrke ned – kort tryk i alle tre positioner."
           default: []
           selector:
             action: {}
- 
+
     hold_actions:
-      name: "Advanced · Long presses (optional)"
+      name: "Avanceret · Lange tryk (valgfrit)"
       icon: mdi:gesture-tap-hold
-      description: "Runs once when the hold event arrives."
+      description: "Handlingen køres én gang, når et langt tryk registreres."
       collapsed: true
       input:
         arrow_left_hold_action:
-          name: "TOP LEFT · Hold"
-          description: "Left-arrow hold (Middle mode) or Power hold (Left/Right modes)."
+          name: "ØVERST VENSTRE · Langt tryk"
+          description: "Venstre pil i midterposition; tænd/sluk i venstre og højre position."
           default: []
           selector:
             action: {}
 
         arrow_right_hold_action:
-          name: "TOP RIGHT · ▶ Hold"
-          description: "Zigbee2MQTT event: `arrow_right_hold`. Leave empty to ignore."
+          name: "ØVERST HØJRE · ▶ Langt tryk"
+          description: "Langt tryk på højre pil."
           default: []
           selector:
             action: {}
 
         center_hold_action:
-          name: "MIDDLE · Hold"
-          description: "Power hold (Middle) or Left-arrow hold (Left). Not available in Right mode."
+          name: "MIDTEN · Langt tryk"
+          description: "Tænd/sluk i midterposition; venstre pil i venstre position. Ikke tilgængelig i højre position."
           default: []
           selector:
             action: {}
 
         brightness_up_hold_action:
-          name: "BOTTOM LEFT · ☀+ Hold"
-          description: "Zigbee2MQTT event: `brightness_up_hold`. Leave empty to ignore."
+          name: "NEDERST VENSTRE · ☀ Langt tryk"
+          description: "Langt tryk på lysstyrke op."
           default: []
           selector:
             action: {}
 
         brightness_down_hold_action:
-          name: "BOTTOM RIGHT · ☼− Hold"
-          description: "Zigbee2MQTT event: `brightness_down_hold`. Leave empty to ignore."
+          name: "NEDERST HØJRE · ☼ Langt tryk"
+          description: "Langt tryk på lysstyrke ned."
           default: []
           selector:
             action: {}
- 
+
     release_actions:
-      name: "Advanced · Releases (optional)"
+      name: "Avanceret · Slip knap (valgfrit)"
       icon: mdi:gesture-tap-button
-      description: "Actions when a held arrow or brightness button is released."
+      description: "Kører når en knap slippes efter et langt tryk, hvis Zigbee2MQTT udsender en slip-hændelse."
       collapsed: true
       input:
         arrow_left_release_action:
-          name: "TOP LEFT · Release"
-          description: "Left-arrow release in Middle mode only; Power has no release event."
+          name: "ØVERST VENSTRE · Slip"
+          description: "Slip venstre pil i midterposition; tænd/sluk har normalt ingen slip-hændelse."
           default: []
           selector:
             action: {}
 
         center_release_action:
-          name: "MIDDLE · Release (Left selector only)"
-          description: "Left-arrow release from the middle button; available only in Left mode."
+          name: "MIDTEN · Slip (kun venstre position)"
+          description: "Slip venstre pil på midterknappen, når omskifteren står til venstre."
           default: []
           selector:
             action: {}
 
         arrow_right_release_action:
-          name: "TOP RIGHT · ▶ Release"
-          description: "Zigbee2MQTT event: `arrow_right_release`. Leave empty to ignore."
+          name: "ØVERST HØJRE · ▶ Slip"
+          description: "Slip højre pil."
           default: []
           selector:
             action: {}
 
         brightness_up_release_action:
-          name: "BOTTOM LEFT · ☀+ Release"
-          description: "Zigbee2MQTT event: `brightness_up_release`. Leave empty to ignore."
+          name: "NEDERST VENSTRE · ☀ Slip"
+          description: "Slip lysstyrke op."
           default: []
           selector:
             action: {}
 
         brightness_down_release_action:
-          name: "BOTTOM RIGHT · ☼− Release"
-          description: "Zigbee2MQTT event: `brightness_down_release`. Leave empty to ignore."
+          name: "NEDERST HØJRE · ☼ Slip"
+          description: "Slip lysstyrke ned."
           default: []
           selector:
             action: {}
@@ -229,7 +226,7 @@ conditions:
 
 actions:
   - variables:
-      blueprint_version: "1.2.0"
+      blueprint_version: "1.2.1"
       raw_button_event: "{{ trigger.to_state.attributes.get('event_type', '') if trigger.to_state else '' }}"
       # Normalize the hardware event to a logical physical FUGA position.
       # Existing action input keys retain their meanings in Middle mode.
