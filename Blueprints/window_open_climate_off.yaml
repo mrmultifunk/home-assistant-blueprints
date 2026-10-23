@@ -1,9 +1,9 @@
 # Window open - Climate off and restore
-# Version: 1.4.0
+# Version: 1.4.1
 blueprint:
-  name: "Window open - Climate off and restore (v1.4.0)"
+  name: "Window open - Climate off and restore (v1.4.1)"
   description: |-
-    **Version: 1.4.0**
+    **Version: 1.4.1**
 
     Turn the climate device off when any selected door or window is open
     longer than the configured opening delay. Restore the previous HVAC
@@ -20,15 +20,19 @@ blueprint:
   input:
     window_entity:
       name: Window / door sensors
-      description: Select one or more window or door binary sensors.
+      description: >
+        Select window and door contacts. Includes generic Opening
+        sensors commonly used for door/window contacts.
       selector:
         entity:
+          multiple: true
           filter:
             - domain: binary_sensor
-              device_class:
-                - window
-                - door
-          multiple: true
+              device_class: window
+            - domain: binary_sensor
+              device_class: door
+            - domain: binary_sensor
+              device_class: opening
 
     minimum_open_time:
       name: Minimum open time
@@ -87,7 +91,7 @@ conditions:
 
 actions:
   - variables:
-      blueprint_version: "1.4.0"
+      blueprint_version: "1.4.1"
       previous_hvac_mode: "{{ states(climate_entity) }}"
 
   - action: climate.turn_off
