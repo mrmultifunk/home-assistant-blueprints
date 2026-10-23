@@ -1,13 +1,11 @@
 # IKEA TRÅDFRI E1524/E1810 – FUGA-konvertering til Zigbee2MQTT
-# Version: 1.2.1
+# Version: 1.2.2
 blueprint:
-  name: "IKEA TRÅDFRI – FUGA-fjernbetjening (Zigbee2MQTT) v1.2.1"
+  name: "IKEA TRÅDFRI – FUGA-fjernbetjening (Zigbee2MQTT) v1.2.2"
   description: |-
-    **IKEA TRÅDFRI · FUGA-fjernbetjening · v1.2.1**
+    **IKEA TRÅDFRI · FUGA-fjernbetjening · v1.2.2**
 
-    Vælg selv, hvad hver knap på din FUGA-kontakt skal gøre.
-    Blueprintet understøtter **alle tre positioner** på den lille
-    mekaniske omskifter. **Midten er standard.**
+    Vælg selv, hvad hver knap på din FUGA-kontakt skal gøre. Blueprintet understøtter **alle tre positioner** på den lille mekaniske omskifter. **Midten er standard.**
 
     ### Knapper – omskifter i midten (standard)
 
@@ -23,23 +21,14 @@ blueprint:
 
     ### De andre omskifterpositioner
 
-    - **Venstre:** Øverst venstre er **tænd/sluk**. Midterknappen
-      er **venstre pil**. De øvrige knapper er uændrede.
-    - **Højre:** Øverst venstre er **tænd/sluk**. Midterknappen
-      er **link/parring** og kan normalt ikke bruges til en
-      automation. De øvrige knapper er uændrede.
+    - **Venstre:** Øverst venstre er **tænd/sluk**. Midterknappen er **venstre pil**. De øvrige knapper er uændrede.
+    - **Højre:** Øverst venstre er **tænd/sluk**. Midterknappen er **link/parring** og kan normalt ikke bruges til en automation. De øvrige knapper er uændrede.
 
-    Handlingerne er knyttet til **knappernes fysiske placering**.
-    Blueprintet tilpasser Zigbee2MQTT-hændelserne efter den valgte
-    omskifterposition. Du kan tilføje korte og lange tryk samt
-    slip-handlinger. Ubrugte handlinger kan stå tomme.
+    Handlingerne er knyttet til **knappernes fysiske placering**. Blueprintet tilpasser Zigbee2MQTT-hændelserne efter den valgte omskifterposition. Du kan tilføje korte og lange tryk samt slip-handlinger. Ubrugte handlinger kan stå tomme.
 
-    > **Bemærk:** Omskifterens position skal vælges manuelt.
-    > Kontroller gerne hver knaps `event_type` i Home Assistant,
-    > da den mekaniske mapping er udledt af FUGA-frontens symboler.
+    > **Bemærk:** Omskifterens position skal vælges manuelt. Kontroller gerne hver knaps `event_type` i Home Assistant, da den mekaniske mapping er udledt af FUGA-frontens symboler.
 
-    [FUGA-modellen på Printables](https://www.printables.com/model/93848-zigbee-til-danske-kontakter)
-    · [Zigbee2MQTT – understøttede hændelser](https://www.zigbee2mqtt.io/devices/E1524_E1810.html)
+    [FUGA-modellen på Printables](https://www.printables.com/model/93848-zigbee-til-danske-kontakter) · [Zigbee2MQTT – understøttede hændelser](https://www.zigbee2mqtt.io/devices/E1524_E1810.html)
   author: "mrmultifunk"
   domain: automation
   homeassistant:
@@ -226,7 +215,7 @@ conditions:
 
 actions:
   - variables:
-      blueprint_version: "1.2.1"
+      blueprint_version: "1.2.2"
       raw_button_event: "{{ trigger.to_state.attributes.get('event_type', '') if trigger.to_state else '' }}"
       # Normalize the hardware event to a logical physical FUGA position.
       # Existing action input keys retain their meanings in Middle mode.
