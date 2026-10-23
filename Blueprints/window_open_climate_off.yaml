@@ -1,9 +1,9 @@
 # Window open - Climate off and restore
-# Version: 1.3.0
+# Version: 1.4.0
 blueprint:
-  name: "Window open - Climate off and restore (v1.3.0)"
+  name: "Window open - Climate off and restore (v1.4.0)"
   description: |-
-    **Version: 1.3.0**
+    **Version: 1.4.0**
 
     Turn the climate device off when any selected door or window is open
     longer than the configured opening delay. Restore the previous HVAC
@@ -44,13 +44,17 @@ blueprint:
 
     restore_delay:
       name: Restore delay
-      description: How long all doors/windows must remain closed before restoring the climate device. Zero restores immediately.
-      default:
-        hours: 0
-        minutes: 0
-        seconds: 0
+      description: >
+        Seconds all doors/windows must remain closed before restoring
+        the climate device. 0 means restore immediately.
+      default: 0
       selector:
-        duration: {}
+        number:
+          min: 0
+          max: 1800
+          step: 10
+          unit_of_measurement: seconds
+          mode: slider
 
     climate_target:
       name: Climate device
@@ -62,6 +66,8 @@ blueprint:
 variables:
   window_entities: !input window_entity
   climate_entity: !input climate_target
+  # Support numeric seconds and existing automation inputs saved as a duration map.
+  restore_delay_input: !input restore_delay
 
 mode: single
 max_exceeded: silent
@@ -81,12 +87,22 @@ conditions:
 
 actions:
   - variables:
-      blueprint_version: "1.3.0"
+      blueprint_version: "1.4.0"
       previous_hvac_mode: "{{ states(climate_entity) }}"
 
   - action: climate.turn_off
     target:
       entity_id: !input climate_target
+
+  - variables:
+      restore_delay_seconds: >-
+        {% if restore_delay_input is mapping %}
+          {{ (restore_delay_input.get('hours', 0) | int(0)) * 3600
+             + (restore_delay_input.get('minutes', 0) | int(0)) * 60
+             + (restore_delay_input.get('seconds', 0) | int(0)) }}
+        {% else %}
+          {{ restore_delay_input | int(0) }}
+        {% endif %}
 
   # Each iteration waits for all sensors to close, then begins a new
   # uninterrupted restore delay. Any sensor leaving the closed state
@@ -103,7 +119,8 @@ actions:
             - trigger: state
               entity_id: !input window_entity
               from: "off"
-          timeout: !input restore_delay
+          timeout:
+            seconds: "{{ restore_delay_seconds | int(0) }}"
           continue_on_timeout: true
 
       until:
