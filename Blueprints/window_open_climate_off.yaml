@@ -1,33 +1,38 @@
-
 # Window open - Climate off and restore
-# Version: 1.2.0
+# Version: 1.3.0
 blueprint:
-  name: "Window open - Climate off and restore (v1.2.0)"
+  name: "Window open - Climate off and restore (v1.3.0)"
   description: |-
-    **Version: 1.2.0**
+    **Version: 1.3.0**
 
-    Turn off a climate device when any selected window or door sensor has
-    been open for the configured time. Restore the previous HVAC mode only
-    when all selected sensors are closed.
+    Turn the climate device off when any selected door or window is open
+    longer than the configured opening delay. Restore the previous HVAC
+    mode only after ALL selected sensors have been continuously closed
+    for the configured restore delay.
 
-    The trigger requires a sensor to change to 'on'. A sensor that is
-    already open when the automation is loaded does not trigger it.
+    Opening a door or window during the restore delay resets the timer.
+
+    Note: A Home Assistant automation reload or restart interrupts
+    pending waits and loses the saved HVAC mode.
   author: "mrmultifunk"
   domain: automation
 
   input:
     window_entity:
       name: Window / door sensors
-      description: Select one or more binary sensors (windows, doors, etc.).
+      description: Select one or more window or door binary sensors.
       selector:
         entity:
           filter:
             - domain: binary_sensor
+              device_class:
+                - window
+                - door
           multiple: true
 
     minimum_open_time:
       name: Minimum open time
-      description: Seconds before turning off the climate device.
+      description: Number of seconds a door or window must remain open before switching off the climate device.
       default: 12
       selector:
         number:
@@ -36,6 +41,16 @@ blueprint:
           step: 1
           unit_of_measurement: seconds
           mode: slider
+
+    restore_delay:
+      name: Restore delay
+      description: How long all doors/windows must remain closed before restoring the climate device. Zero restores immediately.
+      default:
+        hours: 0
+        minutes: 0
+        seconds: 0
+      selector:
+        duration: {}
 
     climate_target:
       name: Climate device
@@ -66,27 +81,41 @@ conditions:
 
 actions:
   - variables:
-      blueprint_version: "1.2.0"
+      blueprint_version: "1.3.0"
       previous_hvac_mode: "{{ states(climate_entity) }}"
 
   - action: climate.turn_off
     target:
       entity_id: !input climate_target
 
-  # Supports both multiple selections and existing single-sensor automations.
-  - wait_template: >
-      {% set sensors = [window_entities] if window_entities is string else window_entities %}
-      {% set ns = namespace(all_closed=true) %}
-      {% for sensor in sensors %}
-        {% if not is_state(sensor, 'off') %}
-          {% set ns.all_closed = false %}
-        {% endif %}
-      {% endfor %}
-      {{ ns.all_closed }}
+  # Each iteration waits for all sensors to close, then begins a new
+  # uninterrupted restore delay. Any sensor leaving the closed state
+  # resets that delay (including unknown / unavailable).
+  - repeat:
+      sequence:
+        - wait_template: >
+            {% set sensors = [window_entities] if window_entities is string else window_entities %}
+            {{ sensors | count > 0
+               and (expand(sensors) | selectattr('state', 'eq', 'off') | list | count)
+                   == (sensors | count) }}
 
-  # Do not override a user or another automation that changed the mode
-  # while the window was open. The previous mode was read from the device
-  # before it was switched off, so no later hvac_modes lookup is needed.
+        - wait_for_trigger:
+            - trigger: state
+              entity_id: !input window_entity
+              from: "off"
+          timeout: !input restore_delay
+          continue_on_timeout: true
+
+      until:
+        - condition: template
+          value_template: >
+            {% set sensors = [window_entities] if window_entities is string else window_entities %}
+            {{ not wait.completed
+               and sensors | count > 0
+               and (expand(sensors) | selectattr('state', 'eq', 'off') | list | count)
+                   == (sensors | count) }}
+
+  # Do not undo changes made manually or by another automation.
   - condition: state
     entity_id: !input climate_target
     state: "off"
