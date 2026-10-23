@@ -4,7 +4,7 @@ Home Assistant automation blueprints maintained by **mrmultifunk**.
 
 ## IKEA TRÅDFRI – FUGA-fjernbetjening (Zigbee2MQTT)
 
-**Aktuel version: v1.2.1**
+**Aktuel version: v1.2.2**
 
 [Se blueprintet](Blueprints/ikea_tradfri_5_button_event.yaml) ·
 [Importer i Home Assistant](https://github.com/mrmultifunk/home-assistant-blueprints/blob/main/Blueprints/ikea_tradfri_5_button_event.yaml)
@@ -92,7 +92,7 @@ blev udført ved ethvert knaptryk.
 ### Installation og opdatering
 
 1. Importér YAML-filen via **Indstillinger → Automatiseringer og scener → Blueprints → Importér blueprint**.
-2. Opret eller åbn en automation med **IKEA TRÅDFRI – FUGA-fjernbetjening (Zigbee2MQTT) v1.2.1**.
+2. Opret eller åbn en automation med **IKEA TRÅDFRI – FUGA-fjernbetjening (Zigbee2MQTT) v1.2.2**.
 3. Vælg fjernbetjeningens `event.*_action`-entitet og den fysiske omskifterposition.
 4. Tildel handlinger til knapperne. Gem og afprøv hver knap.
 5. Se automationssporingen, hvis en handling ikke bliver udført.
