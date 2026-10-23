@@ -1,11 +1,11 @@
 # Window open - Climate off and restore
-# Version: 1.5.0
+# Version: 1.6.0
 blueprint:
-  name: "Window open - Climate off and restore (v1.5.0)"
+  name: "Window open - Climate off and restore (v1.6.0)"
   author: "mrmultifunk"
   domain: automation
   description: |-
-    **Version: 1.5.0**
+    **Version: 1.6.0**
 
     Turn off the climate device after any selected door/window stays open
     for the minimum open time. Restore the previous HVAC mode only after
@@ -23,6 +23,10 @@ blueprint:
     Each automation must use its OWN input_text helper if recovery is
     enabled. Do not configure an initial value for that helper.
     The helper uses "none" to mean no pending restoration.
+
+    An optional persistent notification identifies unknown/unavailable
+    contacts that block thermostat restoration past the warning delay.
+    The warning is cleared when those contacts recover.
 
   input:
     window_entity:
@@ -80,6 +84,25 @@ blueprint:
       selector:
         boolean: {}
 
+    warn_unavailable_sensors:
+      name: Warn about unavailable sensors
+      description: Show a Home Assistant notification if an unavailable contact prevents restoring the climate device.
+      default: true
+      selector:
+        boolean: {}
+
+    unavailable_warning_delay:
+      name: Sensor warning delay
+      description: Seconds a sensor must remain unknown/unavailable before notifying. Only checked during a pending restore.
+      default: 600
+      selector:
+        number:
+          min: 60
+          max: 3600
+          step: 60
+          unit_of_measurement: seconds
+          mode: slider
+
     saved_mode_helper:
       name: Persistent HVAC mode helper (optional)
       description: >
@@ -122,6 +145,8 @@ variables:
   saved_mode_helper: !input saved_mode_helper
   enforce_off: !input enforce_off
   restart_fallback_mode: !input restart_fallback_mode
+  warn_unavailable_sensors: !input warn_unavailable_sensors
+  unavailable_warning_delay: !input unavailable_warning_delay
 
 mode: single
 max_exceeded: silent
@@ -144,7 +169,21 @@ triggers:
 
 actions:
   - variables:
-      blueprint_version: "1.5.0"
+      blueprint_version: "1.6.0"
+      sensor_warning_id: "{{ 'window_climate_sensor_' ~ (this.entity_id | replace('.', '_')) }}"
+
+  # Clean up any stale warning if the sensors have already recovered or
+  # notifications were disabled in the automation settings.
+  - if:
+      - condition: template
+        value_template: >
+          {% set sensors = [window_entities] if window_entities is string else window_entities %}
+          {{ not warn_unavailable_sensors or
+             (expand(sensors) | selectattr('state', 'in', ['unknown', 'unavailable']) | list | count) == 0 }}
+    then:
+      - action: persistent_notification.dismiss
+        data:
+          notification_id: "{{ sensor_warning_id }}"
 
   # Wait briefly for the climate integration to become available on restart.
   - if:
@@ -208,6 +247,9 @@ actions:
               entity_id: "{{ saved_mode_helper }}"
             data:
               value: "none"
+          - action: persistent_notification.dismiss
+            data:
+              notification_id: "{{ sensor_warning_id }}"
           - stop: "External/manual climate activation respected during recovery."
 
   # If the climate is active on startup with all sensors closed and
@@ -257,6 +299,9 @@ actions:
           {{ restore_delay_input | int(0) }}
         {% endif %}
 
+  - variables:
+      sensor_warning_sent: false
+
   # Keep supervising the device until the restore delay has elapsed.
   # New window-open triggers are ignored (mode: single), but all selected
   # sensor states are observed by the wait templates below.
@@ -265,12 +310,82 @@ actions:
         - condition: template
           value_template: "{{ true }}"
       sequence:
+        # Check every 30 seconds even if there are no state changes.
+        # A fault only blocks restoration if no other contact is open.
         - wait_template: >
             {% set sensors = [window_entities] if window_entities is string else window_entities %}
-            {% set all_closed = sensors | count > 0
-               and (expand(sensors) | selectattr('state', 'eq', 'off') | list | count) == sensors | count %}
-            {{ all_closed or states(climate_entity) not in
-               ['off', 'unknown', 'unavailable'] }}
+            {% set entities = expand(sensors) %}
+            {% set all_closed = sensors | count > 0 and
+               (entities | selectattr('state', 'eq', 'off') | list | count) == sensors | count %}
+            {% set opened = entities | selectattr('state', 'eq', 'on') | list | count %}
+            {% set faulty = entities | selectattr('state', 'in', ['unknown', 'unavailable']) | list %}
+            {% set ns = namespace(overdue=false) %}
+            {% for sensor in faulty %}
+              {% if as_timestamp(now()) - as_timestamp(sensor.last_changed) >= (unavailable_warning_delay | int(600)) %}
+                {% set ns.overdue = true %}
+              {% endif %}
+            {% endfor %}
+            {{ all_closed
+               or states(climate_entity) not in ['off', 'unknown', 'unavailable']
+               or (warn_unavailable_sensors and not sensor_warning_sent and opened == 0 and ns.overdue)
+               or (sensor_warning_sent and faulty | count == 0) }}
+          timeout:
+            seconds: 30
+          continue_on_timeout: true
+
+        # Clear an outstanding warning immediately when all faulty
+        # contacts recover, even if another contact remains open.
+        - if:
+            - condition: template
+              value_template: >
+                {% set sensors = [window_entities] if window_entities is string else window_entities %}
+                {{ sensor_warning_sent and
+                   (expand(sensors) | selectattr('state', 'in', ['unknown', 'unavailable']) | list | count) == 0 }}
+          then:
+            - action: persistent_notification.dismiss
+              data:
+                notification_id: "{{ sensor_warning_id }}"
+            - variables:
+                sensor_warning_sent: false
+
+        # Display one notification per fault episode. The fixed ID
+        # avoids duplicate notifications for this automation.
+        - if:
+            - condition: template
+              value_template: >
+                {% set sensors = [window_entities] if window_entities is string else window_entities %}
+                {% set entities = expand(sensors) %}
+                {% set opened = entities | selectattr('state', 'eq', 'on') | list | count %}
+                {% set faulty = entities | selectattr('state', 'in', ['unknown', 'unavailable']) | list %}
+                {% set ns = namespace(overdue=false) %}
+                {% for sensor in faulty %}
+                  {% if as_timestamp(now()) - as_timestamp(sensor.last_changed) >= (unavailable_warning_delay | int(600)) %}
+                    {% set ns.overdue = true %}
+                  {% endif %}
+                {% endfor %}
+                {{ warn_unavailable_sensors and not sensor_warning_sent
+                   and states(climate_entity) == 'off' and opened == 0 and ns.overdue }}
+          then:
+            - action: persistent_notification.create
+              data:
+                notification_id: "{{ sensor_warning_id }}"
+                title: "Climate restore blocked - sensor unavailable"
+                message: >-
+                  **Automation:** {{ this.attributes.friendly_name | default(this.entity_id) }}
+
+                  **Climate device:** {{ state_attr(climate_entity, 'friendly_name') or climate_entity }}
+
+                  The climate device cannot be restored because a selected
+                  contact is unknown or unavailable. All contacts must be
+                  closed for the full restore delay before heating resumes.
+
+                  **Affected sensors:**
+                  {% set sensors = [window_entities] if window_entities is string else window_entities %}
+                  {% for s in expand(sensors) if s.state in ['unknown', 'unavailable'] %}
+                  - {{ s.name }} ({{ s.entity_id }}): {{ s.state }}
+                  {% endfor %}
+            - variables:
+                sensor_warning_sent: true
 
         # Handle external/manual activation while waiting for closure.
         - if:
@@ -295,6 +410,9 @@ actions:
                         entity_id: "{{ saved_mode_helper }}"
                       data:
                         value: "none"
+                - action: persistent_notification.dismiss
+                  data:
+                    notification_id: "{{ sensor_warning_id }}"
                 - stop: "Manual/other automation override respected."
 
         # Only start the restore countdown after ALL contacts are closed.
@@ -342,7 +460,10 @@ actions:
                             entity_id: "{{ saved_mode_helper }}"
                           data:
                             value: "none"
-                    - stop: "Manual/other automation override respected."
+                    - action: persistent_notification.dismiss
+                  data:
+                    notification_id: "{{ sensor_warning_id }}"
+                - stop: "Manual/other automation override respected."
 
             - if:
                 - condition: template
@@ -369,4 +490,7 @@ actions:
                         entity_id: "{{ saved_mode_helper }}"
                       data:
                         value: "none"
+                - action: persistent_notification.dismiss
+                  data:
+                    notification_id: "{{ sensor_warning_id }}"
                 - stop: "Previous HVAC mode restored."
