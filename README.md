@@ -4,7 +4,7 @@ Home Assistant automation blueprints maintained by **mrmultifunk**.
 
 ## Window open - Climate off and restore
 
-**Current version: v1.6.0**
+**Current version: v1.6.1**
 
 [Open the blueprint](Blueprints/window_open_climate_off.yaml)
 
@@ -24,11 +24,11 @@ Home Assistant automation blueprints maintained by **mrmultifunk**.
 1. Import [the blueprint on GitHub](https://github.com/mrmultifunk/home-assistant-blueprints/blob/main/Blueprints/window_open_climate_off.yaml) through **Settings → Automations & scenes → Blueprints → Import blueprint**.
 2. For updates, open the blueprint's three-dot menu and choose **Re-import blueprint**.
 3. Reload automations under **Developer Tools → YAML** (or restart Home Assistant).
-4. Confirm that the imported blueprint name and description show **v1.6.0**.
+4. Confirm that the imported blueprint name and description show **v1.6.1**.
 
 **Important:** GitHub updates are not automatically installed in Home Assistant. The version shown in Home Assistant is the locally imported version.
 
-### New in v1.6.0 — unavailable sensor warnings
+### Unavailable sensor warnings (introduced in v1.6.0)
 
 **Warn about unavailable sensors** (default: On)
 
@@ -61,7 +61,7 @@ session finishes or is manually overridden.
   reconstruct a past session to warn about it.
 - No additional helper is needed for warnings.
 
-### New options in v1.6.0
+### New options in v1.6.1
 
 **Enforce off while window is open** (default: On)
 
