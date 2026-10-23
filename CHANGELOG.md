@@ -108,6 +108,18 @@ First explicitly versioned release of the window-open climate blueprint.
 
 ## IKEA TRÅDFRI five-button remote (Zigbee2MQTT event)
 
+### [1.2.1] - 2026-10-23
+
+- Oversat blueprintets navn, beskrivelser, knapper, omskiftervalg og
+  hjælpetekster til dansk.
+- Erstattet den brede Markdown-tabel med den oprindelige, enkle
+  FUGA-knaptegning for standardpositionen (midten).
+- Forklarer ændringerne i venstre og højre omskifterposition med korte
+  punkter under tegningen.
+- Opdateret README på dansk med samme knaptegning og installationsvejledning.
+- Alle 15 handlings-inputs og den eksisterende Zigbee2MQTT-eventlogik
+  er bevaret uden funktionsændringer.
+
 ### [1.2.0] - 2026-10-23
 
 - Add **FUGA selector position** dropdown with **Left**, **Middle
