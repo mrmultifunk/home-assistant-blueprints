@@ -1,0 +1,245 @@
+# IKEA TRÅDFRI E1524/E1810 Zigbee2MQTT event-based 5-button remote
+# Version: 1.0.0
+blueprint:
+  name: "IKEA TRÅDFRI 5-button remote (Z2M event) v1.0.0"
+  description: |-
+    **IKEA TRÅDFRI 5-button remote** · **v1.0.0**
+
+    Assign custom Home Assistant actions to the five buttons of the
+    IKEA E1524/E1810 round Zigbee remote, including remotes converted
+    to a FUGA-style wall switch.
+
+    ### Features
+
+    - **5 short presses:** Center, brightness up/down, left/right.
+    - **Optional hold/release actions:** Available in the collapsed
+      advanced sections.
+    - **Any action:** Lights, switches, scenes, scripts or automation actions.
+    - **No additional helpers:** Uses your existing Zigbee2MQTT
+      `event.*_action` entity and its `event_type` attribute.
+
+    ### Setup
+
+    1. Choose the remote's `event.*_action` entity.
+    2. Configure the actions you want for each button.
+    3. Leave unused actions empty.
+
+    > **Note:** This blueprint listens to Zigbee2MQTT **event entities**,
+    > not ZHA device events. Holding the center button can generate
+    > both `toggle` and `toggle_hold`, depending on firmware.
+    > Hold actions execute once when the event arrives; continuous
+    > dimming requires a separate script or sequence.
+
+    [Printables FUGA conversion](https://www.printables.com/model/93848-zigbee-til-danske-kontakter)
+    · [Zigbee2MQTT E1524/E1810](https://www.zigbee2mqtt.io/devices/E1524_E1810.html)
+  author: "mrmultifunk"
+  domain: automation
+  homeassistant:
+    min_version: "2024.6.0"
+
+  input:
+    remote:
+      name: "Remote"
+      icon: mdi:remote
+      input:
+        remote_event:
+          name: "Zigbee2MQTT remote event entity"
+          description: "Select the event entity ending in `_action`, e.g. `event.lea_fjernbetjening_1_vaeg_action`."
+          selector:
+            entity:
+              filter:
+                - domain: event
+
+    short_presses:
+      name: "Short presses"
+      icon: mdi:gesture-tap
+      description: "Each button can run its own independent sequence."
+      input:
+        center_click_action:
+          name: "Center button"
+          description: "Actions to execute for `toggle`. Leave empty to ignore."
+          default: []
+          selector:
+            action: {}
+
+        brightness_up_click_action:
+          name: "Brightness up"
+          description: "Actions to execute for `brightness_up_click`. Leave empty to ignore."
+          default: []
+          selector:
+            action: {}
+
+        brightness_down_click_action:
+          name: "Brightness down"
+          description: "Actions to execute for `brightness_down_click`. Leave empty to ignore."
+          default: []
+          selector:
+            action: {}
+
+        arrow_left_click_action:
+          name: "Left arrow"
+          description: "Actions to execute for `arrow_left_click`. Leave empty to ignore."
+          default: []
+          selector:
+            action: {}
+
+        arrow_right_click_action:
+          name: "Right arrow"
+          description: "Actions to execute for `arrow_right_click`. Leave empty to ignore."
+          default: []
+          selector:
+            action: {}
+
+    hold_actions:
+      name: "Long presses (optional)"
+      icon: mdi:gesture-tap-hold
+      collapsed: true
+      description: "Run once on the hold event. The center hold may also generate a normal center click."
+      input:
+        center_hold_action:
+          name: "Center hold"
+          description: "Actions to execute for `toggle_hold`. Leave empty to ignore."
+          default: []
+          selector:
+            action: {}
+
+        brightness_up_hold_action:
+          name: "Brightness up hold"
+          description: "Actions to execute for `brightness_up_hold`. Leave empty to ignore."
+          default: []
+          selector:
+            action: {}
+
+        brightness_down_hold_action:
+          name: "Brightness down hold"
+          description: "Actions to execute for `brightness_down_hold`. Leave empty to ignore."
+          default: []
+          selector:
+            action: {}
+
+        arrow_left_hold_action:
+          name: "Left arrow hold"
+          description: "Actions to execute for `arrow_left_hold`. Leave empty to ignore."
+          default: []
+          selector:
+            action: {}
+
+        arrow_right_hold_action:
+          name: "Right arrow hold"
+          description: "Actions to execute for `arrow_right_hold`. Leave empty to ignore."
+          default: []
+          selector:
+            action: {}
+
+    release_actions:
+      name: "Button releases (optional)"
+      icon: mdi:gesture-tap-button
+      collapsed: true
+      description: "Run when a held directional or brightness button is released."
+      input:
+        brightness_up_release_action:
+          name: "Brightness up release"
+          description: "Actions to execute for `brightness_up_release`. Leave empty to ignore."
+          default: []
+          selector:
+            action: {}
+
+        brightness_down_release_action:
+          name: "Brightness down release"
+          description: "Actions to execute for `brightness_down_release`. Leave empty to ignore."
+          default: []
+          selector:
+            action: {}
+
+        arrow_left_release_action:
+          name: "Left arrow release"
+          description: "Actions to execute for `arrow_left_release`. Leave empty to ignore."
+          default: []
+          selector:
+            action: {}
+
+        arrow_right_release_action:
+          name: "Right arrow release"
+          description: "Actions to execute for `arrow_right_release`. Leave empty to ignore."
+          default: []
+          selector:
+            action: {}
+
+mode: queued
+max: 20
+max_exceeded: silent
+
+triggers:
+  - trigger: state
+    entity_id: !input remote_event
+
+conditions:
+  # Ignore attribute-only updates and unavailable transitions.
+  - condition: template
+    value_template: >
+      {{ trigger.to_state is not none
+         and (trigger.from_state is none or
+              trigger.to_state.state != trigger.from_state.state) }}
+
+actions:
+  - variables:
+      blueprint_version: "1.0.0"
+      button_event: "{{ trigger.to_state.attributes.get('event_type', '') if trigger.to_state else '' }}"
+
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ button_event == 'toggle' }}"
+        sequence: !input center_click_action
+      - conditions:
+          - condition: template
+            value_template: "{{ button_event == 'brightness_up_click' }}"
+        sequence: !input brightness_up_click_action
+      - conditions:
+          - condition: template
+            value_template: "{{ button_event == 'brightness_down_click' }}"
+        sequence: !input brightness_down_click_action
+      - conditions:
+          - condition: template
+            value_template: "{{ button_event == 'arrow_left_click' }}"
+        sequence: !input arrow_left_click_action
+      - conditions:
+          - condition: template
+            value_template: "{{ button_event == 'arrow_right_click' }}"
+        sequence: !input arrow_right_click_action
+      - conditions:
+          - condition: template
+            value_template: "{{ button_event == 'toggle_hold' }}"
+        sequence: !input center_hold_action
+      - conditions:
+          - condition: template
+            value_template: "{{ button_event == 'brightness_up_hold' }}"
+        sequence: !input brightness_up_hold_action
+      - conditions:
+          - condition: template
+            value_template: "{{ button_event == 'brightness_down_hold' }}"
+        sequence: !input brightness_down_hold_action
+      - conditions:
+          - condition: template
+            value_template: "{{ button_event == 'arrow_left_hold' }}"
+        sequence: !input arrow_left_hold_action
+      - conditions:
+          - condition: template
+            value_template: "{{ button_event == 'arrow_right_hold' }}"
+        sequence: !input arrow_right_hold_action
+      - conditions:
+          - condition: template
+            value_template: "{{ button_event == 'brightness_up_release' }}"
+        sequence: !input brightness_up_release_action
+      - conditions:
+          - condition: template
+            value_template: "{{ button_event == 'brightness_down_release' }}"
+        sequence: !input brightness_down_release_action
+      - conditions:
+          - condition: template
+            value_template: "{{ button_event == 'arrow_left_release' }}"
+        sequence: !input arrow_left_release_action
+      - conditions:
+          - condition: template
+            value_template: "{{ button_event == 'arrow_right_release' }}"
+        sequence: !input arrow_right_release_action
