@@ -24,6 +24,32 @@ Home Assistant automation blueprints maintained by **mrmultifunk**.
 
 **Important:** GitHub updates are not automatically installed in Home Assistant. The version shown in Home Assistant is the locally imported version.
 
+### Upgrading automations made before multiple-sensor support
+
+If the **Window / door sensors** input is completely blank in an existing
+automation even though it appears for a newly created automation, the old
+`window_entity` input is probably a **string** rather than the **list**
+required by `multiple: true`.
+
+Open that automation's **Edit in YAML** menu and change only the input value:
+
+```yaml
+# Before (single string)
+window_entity: binary_sensor.living_room_window
+```
+
+```yaml
+# After (list; one or more sensors)
+window_entity:
+  - binary_sensor.living_room_window
+  - binary_sensor.living_room_door
+```
+
+Keep the existing `use_blueprint.path`, other inputs and automation ID
+unchanged. Save the automation and reopen the visual editor. Do this once for
+each automation created with the original single-sensor blueprint. Re-importing
+the blueprint alone does not migrate already saved input values.
+
 ### Notes
 
 - The sensor selector is filtered by device class, not by friendly name. Contact sensors without the `door`, `window`, or `opening` device class will not be shown. Check the entity's **Show as** setting if your sensor is missing.
