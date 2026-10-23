@@ -1,33 +1,46 @@
 # Window open - Climate off and restore
-# Version: 1.6.0
+# Version: 1.6.1
 blueprint:
-  name: "Window open - Climate off and restore (v1.6.0)"
+  name: "Window open - Climate off and restore (v1.6.1)"
   author: "mrmultifunk"
   domain: automation
   description: |-
-    **Version: 1.6.0**
+    **Smart window & door climate control** · **v1.6.1**
 
-    Turn off the climate device after any selected door/window stays open
-    for the minimum open time. Restore the previous HVAC mode only after
-    all selected contacts remain closed for the restore delay.
+    Automatically pauses your thermostat when a door or window is open,
+    then restores its previous HVAC mode after everything is closed.
 
-    **New:** An optional input_text helper saves the previous HVAC mode
-    across Home Assistant restarts / automation reloads. Without this
-    helper, exact recovery after a restart is impossible. Optionally
-    choose a fallback HVAC mode for a restart with an open contact.
+    ### How it works
 
-    Choose whether an external/manuel climate activation during the
-    window-open period is automatically turned off again, or respected
-    as an override.
+    1. **Open:** A selected door or window stays open for the configured
+       *Minimum open time* → the thermostat switches off.
+    2. **Wait:** Heating remains off as long as any selected contact is open.
+    3. **Restore:** All contacts must remain closed throughout the
+       *Restore delay* before the previous mode is restored.
+       Reopening a contact resets the countdown.
 
-    Each automation must use its OWN input_text helper if recovery is
-    enabled. Do not configure an initial value for that helper.
-    The helper uses "none" to mean no pending restoration.
+    ### Additional features
 
-    An optional persistent notification identifies unknown/unavailable
-    contacts that block thermostat restoration past the warning delay.
-    The warning is cleared when those contacts recover.
+    - **Multiple contacts:** Monitor several doors and windows together.
+    - **Enforce off:** Turn the thermostat off again if another automation
+      or a person switches it on, or allow manual overrides instead.
+    - **Unavailable sensor warnings:** Show a Home Assistant notification
+      if an `unknown` or `unavailable` contact blocks restoration for
+      longer than the configured warning delay.
+    - **Restart recovery:** Optionally save the previous HVAC mode in a
+      dedicated `input_text` helper so it survives Home Assistant restarts.
+      A selectable fallback mode is available when no saved mode exists.
 
+    ### Important
+
+    > **Exact recovery after a restart requires one dedicated `input_text`
+    > helper per automation, without a fixed initial value.** Without it,
+    > the blueprint cannot always determine the previous HVAC mode.
+
+    Sensors that are `unknown` or `unavailable` **never count as closed**.
+    They therefore prevent restoration until they recover.
+
+    [Documentation and version history](https://github.com/mrmultifunk/home-assistant-blueprints#readme)
   input:
     window_entity:
       name: Window / door sensors
@@ -169,7 +182,7 @@ triggers:
 
 actions:
   - variables:
-      blueprint_version: "1.6.0"
+      blueprint_version: "1.6.1"
       sensor_warning_id: "{{ 'window_climate_sensor_' ~ (this.entity_id | replace('.', '_')) }}"
 
   # Clean up any stale warning if the sensors have already recovered or
