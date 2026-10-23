@@ -4,7 +4,7 @@ Home Assistant automation blueprints maintained by **mrmultifunk**.
 
 ## Window open - Climate off and restore
 
-**Current version: v1.4.1**
+**Current version: v1.5.0**
 
 [Open the blueprint](Blueprints/window_open_climate_off.yaml)
 
@@ -13,16 +13,50 @@ Home Assistant automation blueprints maintained by **mrmultifunk**.
 - Restore the previous HVAC mode after every selected sensor has remained closed for a configurable delay.
 - Set restore delay with a 0–1800-second slider (10-second steps, default 0).
 - Restart the restore countdown if any selected door/window opens during that time.
-- No Home Assistant helpers required.
+- Choose whether an external or manual thermostat activation is switched off again, or respected.
+- Optional `input_text` helper for *exact* previous-HVAC-mode restoration after restarting/reloading Home Assistant.
+- Optional fallback mode when no helper is used and a window is still open on restart.
+- No helper is required for normal operation, but exact reboot recovery needs a persistent helper.
 
 ### Install / update
 
 1. Import [the blueprint on GitHub](https://github.com/mrmultifunk/home-assistant-blueprints/blob/main/Blueprints/window_open_climate_off.yaml) through **Settings → Automations & scenes → Blueprints → Import blueprint**.
 2. For updates, open the blueprint's three-dot menu and choose **Re-import blueprint**.
 3. Reload automations under **Developer Tools → YAML** (or restart Home Assistant).
-4. Confirm that the imported blueprint name and description show **v1.4.1**.
+4. Confirm that the imported blueprint name and description show **v1.5.0**.
 
 **Important:** GitHub updates are not automatically installed in Home Assistant. The version shown in Home Assistant is the locally imported version.
+
+### New options in v1.5.0
+
+**Enforce off while window is open** (default: On)
+
+- **On**: If someone or another automation turns on the thermostat while any selected contact is open **or while the restore countdown is running**, the blueprint turns it off again. It continues waiting for all contacts to close and for the delay to complete.
+- **Off**: Treat the external activation as an override; release control, discard any pending restoration and leave the thermostat as it was set.
+
+**Persistent HVAC mode helper** (optional)
+
+To reliably restore the exact previous mode after a Home Assistant restart or automation reload:
+
+1. Go to **Settings → Devices & services → Helpers → Create helper → Text**.
+2. Create **one text helper per climate automation**, for example `input_text.living_room_window_hvac_mode`. Leave its **initial value unset**; use the default length range with minimum 0.
+3. Select that helper in the blueprint's **Persistent HVAC mode helper** input.
+4. The blueprint writes the current HVAC mode (e.g. `heat`) before turning off. When normal restoration finishes, or when external control is respected, it writes `none` to clear the pending state.
+
+Home Assistant restores `input_text` values across restarts *only when no fixed initial value is configured*. Re-importing or restarting while a thermostat was already turned off by an older blueprint **cannot recover its former mode retroactively**. Begin with the thermostat in its desired active state and doors/windows closed before first enabling this feature.
+
+**Restart fallback mode** (default: None)
+
+Only relevant when a restart/reload occurs, there is **no stored HVAC mode**, a contact is **still open**, and the thermostat is currently **off**. Selecting `heat`, `auto`, `heat_cool` or `cool` instructs the blueprint to restore that mode after all contacts close and the restore delay expires. Use a mode your thermostat supports.
+
+This is an approximation, **not exact state recovery**. The default `None` avoids unexpectedly switching the thermostat on. Without a persistent helper the blueprint cannot know why the thermostat is off after restart, or whether the window opened and closed while Home Assistant was offline.
+
+### Suggested tests
+
+1. With two windows closed and heating active, open one beyond **Minimum open time**. The thermostat must turn off.
+2. Open the second window, close the first. It must remain off until the second closes and **Restore delay** finishes.
+3. While either window is open, turn on the thermostat manually. With **Enforce off** on, it must be switched off again; with it off, the blueprint must leave it on and not restore later.
+4. To test restart recovery, **configure a dedicated Text helper first**, open a window until the thermostat switches off, restart Home Assistant, then close all windows. The previous mode should be restored after the delay. You can inspect the helper's value in Developer Tools → States (`heat` while pending; `none` after completion).
 
 ### Upgrading automations made before multiple-sensor support
 
@@ -54,8 +88,8 @@ the blueprint alone does not migrate already saved input values.
 
 - The sensor selector is filtered by device class, not by friendly name. Contact sensors without the `door`, `window`, or `opening` device class will not be shown. Check the entity's **Show as** setting if your sensor is missing.
 
-- A sensor must transition to `on` while the automation is active to trigger; a sensor already open on reload does not start the automation.
-- If Home Assistant reloads / restarts while waiting for a window to close, the in-progress restore is lost.
+- **New opening triggers still require an opening transition.** Home Assistant startup/reload now additionally attempts recovery based on a saved mode, or starts a new session if a contact is open and the thermostat is active.
+- A Home Assistant restart/reload resets any in-progress restore countdown. With a correctly configured `input_text` helper, recovery starts a fresh full restore delay.
 - The blueprint intentionally restores only HVAC mode, not other thermostat settings.
 - The restore delay defaults to zero to preserve existing behavior. Previous hour/minute/second duration values are still supported by the automation logic, but reselect a slider value when editing your automation.
 - If the climate device is still off after closing every window, inspect that automation's **Traces** (trigger, conditions, wait template and climate service call).
