@@ -1,9 +1,9 @@
 # IKEA TRÅDFRI E1524/E1810 – FUGA-konvertering til Zigbee2MQTT
-# Version: 1.2.2
+# Version: 1.2.3
 blueprint:
-  name: "IKEA TRÅDFRI – FUGA-fjernbetjening (Zigbee2MQTT) v1.2.2"
+  name: "IKEA TRÅDFRI – FUGA-fjernbetjening (Zigbee2MQTT) v1.2.3"
   description: |-
-    **IKEA TRÅDFRI · FUGA-fjernbetjening · v1.2.2**
+    **IKEA TRÅDFRI · FUGA-fjernbetjening · v1.2.3**
 
     Vælg selv, hvad hver knap på din FUGA-kontakt skal gøre. Blueprintet understøtter **alle tre positioner** på den lille mekaniske omskifter. **Midten er standard.**
 
@@ -27,6 +27,8 @@ blueprint:
     Handlingerne er knyttet til **knappernes fysiske placering**. Blueprintet tilpasser Zigbee2MQTT-hændelserne efter den valgte omskifterposition. Du kan tilføje korte og lange tryk samt slip-handlinger. Ubrugte handlinger kan stå tomme.
 
     > **Bemærk:** Omskifterens position skal vælges manuelt. Kontroller gerne hver knaps `event_type` i Home Assistant, da den mekaniske mapping er udledt af FUGA-frontens symboler.
+
+    **Husk at tildele handlinger:** Knapperne har ingen standardhandling. Vælg f.eks. *Lys → Skift (toggle)* under den ønskede knap. Handlinger fra en tidligere automation overføres ikke automatisk.
 
     [FUGA-modellen på Printables](https://www.printables.com/model/93848-zigbee-til-danske-kontakter) · [Zigbee2MQTT – understøttede hændelser](https://www.zigbee2mqtt.io/devices/E1524_E1810.html)
   author: "mrmultifunk"
@@ -202,20 +204,22 @@ max: 20
 max_exceeded: silent
 
 triggers:
+  # Zigbee2MQTT event entities update their timestamp for each new event.
+  # An explicit null 'to' follows the recommended HA event-entity pattern.
   - trigger: state
     entity_id: !input remote_event
+    to: ~
 
 conditions:
-  # Ignore attribute-only updates and unavailable transitions.
+  # Only process state changes which contain an actual button event.
   - condition: template
     value_template: >
-      {{ trigger.to_state is not none
-         and (trigger.from_state is none or
-              trigger.to_state.state != trigger.from_state.state) }}
+      {{ trigger.to_state is not none and
+         trigger.to_state.attributes.get('event_type', '') != '' }}
 
 actions:
   - variables:
-      blueprint_version: "1.2.2"
+      blueprint_version: "1.2.3"
       raw_button_event: "{{ trigger.to_state.attributes.get('event_type', '') if trigger.to_state else '' }}"
       # Normalize the hardware event to a logical physical FUGA position.
       # Existing action input keys retain their meanings in Middle mode.
