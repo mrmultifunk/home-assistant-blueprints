@@ -2,6 +2,14 @@
 
 Version numbers follow Semantic Versioning: `MAJOR.MINOR.PATCH`.
 
+## [1.6.1] - 2026-10-23
+
+### Documentation
+- Redesigned the blueprint description using Markdown headings, numbered steps, short feature summaries and an important-information callout.
+- Added a direct link to repository documentation.
+- Bumped the visible blueprint name, description and trace version to `1.6.1`.
+- No changes to automation inputs or logic.
+
 ## [1.6.0] - 2026-10-23
 
 ### Added
