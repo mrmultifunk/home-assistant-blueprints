@@ -1,9 +1,9 @@
 # IKEA TRÅDFRI E1524/E1810 – FUGA-konvertering til Zigbee2MQTT
-# Version: 1.3.0
+# Version: 1.4.0
 blueprint:
-  name: "IKEA TRÅDFRI – FUGA-fjernbetjening (Zigbee2MQTT) v1.3.0"
+  name: "IKEA TRÅDFRI – FUGA-fjernbetjening (Zigbee2MQTT) v1.4.0"
   description: |-
-    **IKEA TRÅDFRI · FUGA-fjernbetjening · v1.3.0**
+    **IKEA TRÅDFRI · FUGA-fjernbetjening · v1.4.0**
 
     Vælg selv, hvad hver knap på din FUGA-kontakt skal gøre. Blueprintet understøtter **alle tre positioner** på den lille mekaniske omskifter. **Midten er standard.**
 
@@ -34,10 +34,25 @@ blueprint:
 
     ### Valgfri Zigbee2MQTT-dæmpning
 
-    Aktivér *Kontinuerlig dæmpning* for at bruge sol-knappernes lange tryk til
-    `brightness_move` og deres slip-hændelser til `brightness_move: 0`.
-    Normal korttrykstyring og alle øvrige handlinger er uændrede. Hvis et
-    slip-event udebliver, stopper en sikkerheds-timeout kommandoen automatisk.
+    Aktivér *Kontinuerlig dæmpning*, og vælg en funktion for **hver fysisk knap**:
+    *Brugerdefineret*, *Dæmp op* eller *Dæmp ned*. Flere knapper kan
+    tildeles samme retning. Kun lange tryk overtages; korte tryk og øvrige
+    brugerdefinerede handlinger bevares. Slip giver `brightness_move: 0`,
+    og en sikkerheds-timeout stopper, hvis slip mangler.
+
+    **Begrænsning på TRÅDFRI E1524/E1810:**
+    - **Øverst venstre** kan dæmpe kontinuerligt, når omskifteren står
+      i **midten** (venstre pil).
+    - **Midterknappen** kan dæmpe kontinuerligt, når omskifteren står
+      til **venstre** (venstre pil).
+    - **Øverst højre** og begge **nederste knapper** kan dæmpe i alle
+      positioner.
+    - Tænd/sluk-knappen udsender ikke slip-hændelse; derfor kan
+      den ikke bruges til kontinuerlig dæmpning. Den højre
+      omskifterposition har desuden link/parring i midten.
+
+    Hvis en knap vælges i en position, der ikke udsender slip, falder
+    den tilbage på sin eksisterende brugerdefinerede hold-handling.
     Lysentiteten bruges kun til at foreslå enhedens Zigbee2MQTT friendly name;
     Home Assistant eksponerer ikke MQTT command_topic direkte i automationsskabeloner.
     Brug manuel override ved navneforskel. MQTT-meddelelser sendes uden retain.
@@ -135,20 +150,97 @@ blueprint:
       name: "Zigbee2MQTT · Kontinuerlig dæmpning (valgfrit)"
       icon: mdi:brightness-6
       description: >-
-        Hold sol-knapperne for kontinuerlig dæmpning og slip for at stoppe.
-        Vælg en MQTT-lys-entitet for at bruge enhedens registrerede navn som
-        Zigbee2MQTT friendly name. Dette er et best-effort opslag, ikke et
-        direkte opslag af MQTT command_topic. Hvis navnet er anderledes i
-        Zigbee2MQTT, angiv friendly name manuelt nedenfor.
+        Vælg individuel funktion for hver fysisk knap: Brugerdefineret,
+        Dæmp op eller Dæmp ned. Kun lange tryk og slip overtages.
+        Øverst venstre understøtter kun dæmpning i omskifterens midterposition;
+        midterknappen kun i venstre position. De øvrige tre knapper
+        understøtter alle positioner. Knappen tænd/sluk har ingen slip-hændelse.
+        En MQTT-lys-entitet bruges til best-effort navneforslag, ikke
+        direkte command_topic-opslag. Manuel friendly name kan overstyre.
         Funktionen er slået fra som standard.
       collapsed: true
       input:
         z2m_dimming_enabled:
           name: "Aktivér kontinuerlig Zigbee2MQTT-dæmpning"
-          description: "Når aktiv, erstatter denne funktion de fire brugerdefinerede hold/slip-handlinger for de nederste knapper."
+          description: "Når aktiv, erstatter dæmpningen kun hold/slip for knapper, som nedenfor er sat til Dæmp op eller Dæmp ned og har en slip-hændelse."
           default: false
           selector:
             boolean: {}
+
+        z2m_dimming_top_left_mode:
+          name: "ØVERST VENSTRE · Langt tryk"
+          description: "Kontinuerlig dæmpning virker kun med omskifteren i MIDTEN (venstre pil)."
+          default: custom
+          selector:
+            select:
+              mode: dropdown
+              options:
+                - label: "Brug eksisterende handling"
+                  value: custom
+                - label: "Dæmp op"
+                  value: up
+                - label: "Dæmp ned"
+                  value: down
+
+        z2m_dimming_top_right_mode:
+          name: "ØVERST HØJRE · Langt tryk"
+          description: "Virker i alle tre omskifterpositioner."
+          default: custom
+          selector:
+            select:
+              mode: dropdown
+              options:
+                - label: "Brug eksisterende handling"
+                  value: custom
+                - label: "Dæmp op"
+                  value: up
+                - label: "Dæmp ned"
+                  value: down
+
+        z2m_dimming_center_mode:
+          name: "MIDTEN · Langt tryk"
+          description: "Kontinuerlig dæmpning virker kun med omskifteren til VENSTRE (venstre pil). Tænd/sluk har ikke en slip-hændelse."
+          default: custom
+          selector:
+            select:
+              mode: dropdown
+              options:
+                - label: "Brug eksisterende handling"
+                  value: custom
+                - label: "Dæmp op"
+                  value: up
+                - label: "Dæmp ned"
+                  value: down
+
+        z2m_dimming_bottom_left_mode:
+          name: "NEDERST VENSTRE · ☀ Langt tryk"
+          description: "Virker i alle omskifterpositioner. Standard: Dæmp op."
+          default: up
+          selector:
+            select:
+              mode: dropdown
+              options:
+                - label: "Brug eksisterende handling"
+                  value: custom
+                - label: "Dæmp op"
+                  value: up
+                - label: "Dæmp ned"
+                  value: down
+
+        z2m_dimming_bottom_right_mode:
+          name: "NEDERST HØJRE · ☼ Langt tryk"
+          description: "Virker i alle omskifterpositioner. Standard: Dæmp ned."
+          default: down
+          selector:
+            select:
+              mode: dropdown
+              options:
+                - label: "Brug eksisterende handling"
+                  value: custom
+                - label: "Dæmp op"
+                  value: up
+                - label: "Dæmp ned"
+                  value: down
 
         z2m_dimming_light:
           name: "Lysentitet (automatisk navneforslag)"
@@ -289,6 +381,11 @@ variables:
   switch_position: !input switch_position
   z2m_dimming_remote: !input remote_event
   z2m_dimming_enabled: !input z2m_dimming_enabled
+  z2m_dimming_top_left_mode: !input z2m_dimming_top_left_mode
+  z2m_dimming_top_right_mode: !input z2m_dimming_top_right_mode
+  z2m_dimming_center_mode: !input z2m_dimming_center_mode
+  z2m_dimming_bottom_left_mode: !input z2m_dimming_bottom_left_mode
+  z2m_dimming_bottom_right_mode: !input z2m_dimming_bottom_right_mode
   z2m_dimming_light: !input z2m_dimming_light
   z2m_dimming_name_override: !input z2m_dimming_name_override
   z2m_dimming_base_topic: !input z2m_dimming_base_topic
@@ -316,7 +413,7 @@ conditions:
 
 actions:
   - variables:
-      blueprint_version: "1.3.0"
+      blueprint_version: "1.4.0"
       raw_button_event: "{{ trigger.to_state.attributes.get('event_type', '') if trigger.to_state else '' }}"
       # Normalize the hardware event to a logical physical FUGA position.
       # Existing action input keys retain their meanings in Middle mode.
@@ -357,14 +454,55 @@ actions:
           {{ z2m_dimming_base_topic | trim | trim('/') }}/{{ z2m_dimming_target_name | trim }}/set
         {%- endif %}
 
-  # Built-in hold/release handling takes priority only when explicitly enabled.
+  # Map normalized hardware events to physical buttons. Continuous dimming
+  # only starts on keys for which the remote publishes a matching release.
+  - variables:
+      z2m_dimming_button_key: >-
+        {% set ev = button_event | trim -%}
+        {% set keys = {
+          'arrow_left_hold': 'top_left' if switch_position == 'middle' else '',
+          'arrow_left_release': 'top_left' if switch_position == 'middle' else '',
+          'arrow_right_hold': 'top_right',
+          'arrow_right_release': 'top_right',
+          'toggle_hold': 'center' if switch_position == 'left' else '',
+          'middle_release': 'center' if switch_position == 'left' else '',
+          'brightness_up_hold': 'bottom_left',
+          'brightness_up_release': 'bottom_left',
+          'brightness_down_hold': 'bottom_right',
+          'brightness_down_release': 'bottom_right'
+        } -%}
+        {{ keys.get(ev, '') }}
+  - variables:
+      z2m_dimming_button_mode: >-
+        {% set modes = {
+          'top_left': z2m_dimming_top_left_mode,
+          'top_right': z2m_dimming_top_right_mode,
+          'center': z2m_dimming_center_mode,
+          'bottom_left': z2m_dimming_bottom_left_mode,
+          'bottom_right': z2m_dimming_bottom_right_mode
+        } -%}
+        {{ modes.get(z2m_dimming_button_key | trim, 'custom') }}
+      z2m_dimming_release_raw: >-
+        {% set releases = {
+          'top_left': 'arrow_left_release',
+          'top_right': 'arrow_right_release',
+          'center': 'arrow_left_release',
+          'bottom_left': 'brightness_up_release',
+          'bottom_right': 'brightness_down_release'
+        } -%}
+        {{ releases.get(z2m_dimming_button_key | trim, '') }}
+
+  # Short presses always retain their existing actions. Only selected
+  # hold/release events are replaced by Zigbee2MQTT brightness_move.
   - choose:
       - conditions:
           - condition: template
             value_template: >-
               {{ z2m_dimming_enabled and
-                 button_event in ['brightness_up_hold', 'brightness_down_hold',
-                                  'brightness_up_release', 'brightness_down_release'] }}
+                 z2m_dimming_button_key | trim != '' and
+                 z2m_dimming_button_mode | trim in ['up', 'down'] and
+                 (button_event.endswith('_hold') or
+                  button_event.endswith('_release')) }}
         sequence:
           - if:
               - condition: template
@@ -374,16 +512,13 @@ actions:
                   Zigbee2MQTT-dæmpning er aktiv, men mål-topic kunne ikke
                   bestemmes. Vælg en MQTT-lys-entitet eller angiv friendly name.
           - choose:
-              # Hold initiates continuous movement. Watch for release or
-              # the opposite direction. A lost release triggers the timeout.
               - conditions:
                   - condition: template
-                    value_template: >-
-                      {{ button_event in ['brightness_up_hold', 'brightness_down_hold'] }}
+                    value_template: "{{ button_event.endswith('_hold') }}"
                 sequence:
                   - variables:
                       z2m_dimming_direction: >-
-                        {{ 1 if button_event == 'brightness_up_hold' else -1 }}
+                        {{ 1 if z2m_dimming_button_mode | trim == 'up' else -1 }}
                   - action: mqtt.publish
                     data:
                       topic: "{{ z2m_dimming_topic }}"
@@ -391,16 +526,22 @@ actions:
                         {{ {'brightness_move': (z2m_dimming_direction | int) *
                            (z2m_dimming_speed | int)} | to_json }}
                       retain: false
-                  # A wait template also checks the current state, avoiding
-                  # a missed release if it arrives during the MQTT publish.
+                  # Wait for this physical button's raw release, or another
+                  # selected dimming hold. Do not stop a new movement when
+                  # the previous button's wait ends due to a different hold.
                   - wait_template: >-
-                      {% if button_event == 'brightness_up_hold' -%}
-                        {{ state_attr(z2m_dimming_remote, 'event_type')
-                           in ['brightness_up_release', 'brightness_down_hold', 'brightness_down_release'] }}
-                      {%- else -%}
-                        {{ state_attr(z2m_dimming_remote, 'event_type')
-                           in ['brightness_down_release', 'brightness_up_hold', 'brightness_up_release'] }}
-                      {%- endif %}
+                      {% set ev = state_attr(z2m_dimming_remote, 'event_type') | default('', true) -%}
+                      {% set active_holds = [
+                        'arrow_left_hold' if
+                          ((switch_position == 'middle' and z2m_dimming_top_left_mode != 'custom')
+                          or (switch_position == 'left' and z2m_dimming_center_mode != 'custom'))
+                          else '',
+                        'arrow_right_hold' if z2m_dimming_top_right_mode != 'custom' else '',
+                        'brightness_up_hold' if z2m_dimming_bottom_left_mode != 'custom' else '',
+                        'brightness_down_hold' if z2m_dimming_bottom_right_mode != 'custom' else ''
+                      ] -%}
+                      {{ ev == z2m_dimming_release_raw | trim or
+                         (ev != raw_button_event and ev in active_holds) }}
                     timeout:
                       seconds: "{{ z2m_dimming_timeout | int(15) }}"
                     continue_on_timeout: true
@@ -408,18 +549,16 @@ actions:
                       - condition: template
                         value_template: "{{ not wait.completed }}"
                     then:
-                      # A stop is sent even when the remote fails to emit a release.
                       - action: mqtt.publish
                         data:
                           topic: "{{ z2m_dimming_topic }}"
                           payload: '{"brightness_move": 0}'
                           retain: false
 
-              # Release is processed in a separate parallel run; never wait.
+              # Release is a separate parallel run to stop immediately.
               - conditions:
                   - condition: template
-                    value_template: >-
-                      {{ button_event in ['brightness_up_release', 'brightness_down_release'] }}
+                    value_template: "{{ button_event.endswith('_release') }}"
                 sequence:
                   - action: mqtt.publish
                     data:
