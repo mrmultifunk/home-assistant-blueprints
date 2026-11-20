@@ -1,9 +1,9 @@
 # IKEA TRÅDFRI E1524/E1810 – FUGA-konvertering til Zigbee2MQTT
-# Version: 1.5.0
+# Version: 1.6.0
 blueprint:
-  name: "IKEA TRÅDFRI – FUGA-fjernbetjening (Zigbee2MQTT) v1.5.0"
+  name: "IKEA TRÅDFRI – FUGA-fjernbetjening (Zigbee2MQTT) v1.6.0"
   description: |-
-    **IKEA TRÅDFRI · FUGA-fjernbetjening · v1.5.0**
+    **IKEA TRÅDFRI · FUGA-fjernbetjening · v1.6.0**
 
     Vælg selv, hvad hver knap på din FUGA-kontakt skal gøre. Blueprintet understøtter **alle tre positioner** på den lille mekaniske omskifter. **Midten er standard.**
 
@@ -35,7 +35,7 @@ blueprint:
     ### Valgfri Zigbee2MQTT-dæmpning
 
     Aktivér *Kontinuerlig dæmpning*, og vælg en funktion for **hver fysisk knap**:
-    *Brugerdefineret*, *Dæmp op* eller *Dæmp ned*. Flere knapper kan
+    *Brugerdefineret*, *Øg lysstyrken* eller *Sænk lysstyrken*. Flere knapper kan
     tildeles samme retning. Kun lange tryk overtages; korte tryk og øvrige
     brugerdefinerede handlinger bevares. Slip giver `brightness_move: 0`,
     og en sikkerheds-timeout stopper, hvis slip mangler.
@@ -53,11 +53,13 @@ blueprint:
 
     Hvis en knap vælges i en position, der ikke udsender slip, falder
     den tilbage på sin eksisterende brugerdefinerede hold-handling.
-    Vælg et primært lys som tidligere, og tilføj **flere MQTT-lys** eller
-    **flere friendly names/fulde MQTT-command-topics** (én pr. linje).
-    Hold, slip og timeout sender samme kommando til samtlige mål.
-    Dobbelte topics bliver fjernet. Det eksisterende enkeltmåls-input
-    og eventuel manuel override bevares for bagudkompatibilitet.
+    Hver knap har nu sin egen sammenklappelige sektion, hvor du vælger
+    **Øg lysstyrken**, **Sænk lysstyrken** eller brugerdefineret handling.
+    Her kan du også vælge selvstændige MQTT-lys og flere friendly names/topics
+    for den pågældende knap. En knap uden egne mål bruger fælles mål, mens
+    udfyldte knapmål **erstatter** de fælles mål for netop den knap.
+    Hold, slip og timeout styrer kun knappens valgte topics, og dubletter
+    fjernes. Tidligere konfigurationer fungerer fortsat med fælles mål.
 
     En Zigbee2MQTT-gruppe kan også angives som friendly name og er mere
     effektiv, når flere Zigbee-enheder altid skal dæmpes sammen.
@@ -155,100 +157,23 @@ blueprint:
             action: {}
 
     z2m_dimming:
-      name: "Zigbee2MQTT · Kontinuerlig dæmpning (valgfrit)"
+      name: "Zigbee2MQTT · Fælles dæmpningsindstillinger"
       icon: mdi:brightness-6
       description: >-
-        Vælg individuel funktion for hver fysisk knap: Brugerdefineret,
-        Dæmp op eller Dæmp ned. Kun lange tryk og slip overtages.
-        Øverst venstre understøtter kun dæmpning i omskifterens midterposition;
-        midterknappen kun i venstre position. De øvrige tre knapper
-        understøtter alle positioner. Knappen tænd/sluk har ingen slip-hændelse.
-        En MQTT-lys-entitet bruges til best-effort navneforslag, ikke
-        direkte command_topic-opslag. Manuel friendly name kan overstyre.
+        Aktivér kontinuerlig dæmpning og angiv fælles lys, topics og hastighed.
+        Åbn derefter sektionen for en fysisk knap for at vælge retning og
+        eventuelt egne lys eller MQTT-topics. Knappens egne mål erstatter
+        de fælles mål; tomme knapfelter bruger fælles mål.
+        En lysentitet giver kun et navneforslag, ikke command_topic-opslag.
         Funktionen er slået fra som standard.
       collapsed: true
       input:
         z2m_dimming_enabled:
           name: "Aktivér kontinuerlig Zigbee2MQTT-dæmpning"
-          description: "Når aktiv, erstatter dæmpningen kun hold/slip for knapper, som nedenfor er sat til Dæmp op eller Dæmp ned og har en slip-hændelse."
+          description: "Når aktiv, erstatter dæmpningen kun hold/slip for knapper, som nedenfor er sat til Øg lysstyrken eller Sænk lysstyrken og har en slip-hændelse."
           default: false
           selector:
             boolean: {}
-
-        z2m_dimming_top_left_mode:
-          name: "ØVERST VENSTRE · Langt tryk"
-          description: "Kontinuerlig dæmpning virker kun med omskifteren i MIDTEN (venstre pil)."
-          default: custom
-          selector:
-            select:
-              mode: dropdown
-              options:
-                - label: "Brug eksisterende handling"
-                  value: custom
-                - label: "Dæmp op"
-                  value: up
-                - label: "Dæmp ned"
-                  value: down
-
-        z2m_dimming_top_right_mode:
-          name: "ØVERST HØJRE · Langt tryk"
-          description: "Virker i alle tre omskifterpositioner."
-          default: custom
-          selector:
-            select:
-              mode: dropdown
-              options:
-                - label: "Brug eksisterende handling"
-                  value: custom
-                - label: "Dæmp op"
-                  value: up
-                - label: "Dæmp ned"
-                  value: down
-
-        z2m_dimming_center_mode:
-          name: "MIDTEN · Langt tryk"
-          description: "Kontinuerlig dæmpning virker kun med omskifteren til VENSTRE (venstre pil). Tænd/sluk har ikke en slip-hændelse."
-          default: custom
-          selector:
-            select:
-              mode: dropdown
-              options:
-                - label: "Brug eksisterende handling"
-                  value: custom
-                - label: "Dæmp op"
-                  value: up
-                - label: "Dæmp ned"
-                  value: down
-
-        z2m_dimming_bottom_left_mode:
-          name: "NEDERST VENSTRE · ☀ Langt tryk"
-          description: "Virker i alle omskifterpositioner. Standard: Dæmp op."
-          default: up
-          selector:
-            select:
-              mode: dropdown
-              options:
-                - label: "Brug eksisterende handling"
-                  value: custom
-                - label: "Dæmp op"
-                  value: up
-                - label: "Dæmp ned"
-                  value: down
-
-        z2m_dimming_bottom_right_mode:
-          name: "NEDERST HØJRE · ☼ Langt tryk"
-          description: "Virker i alle omskifterpositioner. Standard: Dæmp ned."
-          default: down
-          selector:
-            select:
-              mode: dropdown
-              options:
-                - label: "Brug eksisterende handling"
-                  value: custom
-                - label: "Dæmp op"
-                  value: up
-                - label: "Dæmp ned"
-                  value: down
 
         z2m_dimming_light:
           name: "Primær lysentitet (eksisterende mål)"
@@ -328,6 +253,261 @@ blueprint:
               max: 60
               step: 1
               mode: slider
+
+    z2m_dimming_top_left_section:
+      name: "Dæmpning · Øverst venstre · ◀"
+      icon: mdi:lightbulb-outline
+      description: >-
+        Kun med omskifter i MIDTEN (venstre pil). Tænd/sluk har ingen slip-hændelse.
+        Vælg funktion og eventuelle egne mål her. Tomt = brug de fælles
+        mål. Egne mål erstatter (ikke tilføjer til) de fælles mål.
+      collapsed: true
+      input:
+        z2m_dimming_top_left_mode:
+          name: "ØVERST VENSTRE · Langt tryk"
+          description: "Kontinuerlig dæmpning virker kun med omskifteren i MIDTEN (venstre pil)."
+          default: custom
+          selector:
+            select:
+              mode: dropdown
+              options:
+                - label: "Brug eksisterende handling"
+                  value: custom
+                - label: "Øg lysstyrken"
+                  value: up
+                - label: "Sænk lysstyrken"
+                  value: down
+
+        z2m_dimming_top_left_lights:
+          name: "Lysentiteter · Øverst venstre · ◀"
+          description: >-
+            Vælg et eller flere MQTT-lys eller Zigbee2MQTT-grupper, som
+            denne knap skal styre. Tomt = fælles mål.
+            Enhedens Home Assistant-navn skal svare til Z2M friendly name;
+            ellers angiv det korrekte navn i feltet herunder.
+          default: []
+          selector:
+            entity:
+              multiple: true
+              filter:
+                - domain: light
+                  integration: mqtt
+
+        z2m_dimming_top_left_topics:
+          name: "Friendly names/MQTT-topics · Øverst venstre · ◀"
+          description: >-
+            Én pr. linje. For eksempel stue_spots eller
+            zigbee2mqtt/stue_spots/set. Kombineres med valgte lys ovenfor.
+            Hvis et af denne knaps målfelter udfyldes, erstatter det
+            de fælles mål. Identiske topics fjernes.
+          default: ""
+          selector:
+            text:
+              multiline: true
+
+    z2m_dimming_top_right_section:
+      name: "Dæmpning · Øverst højre · ▶"
+      icon: mdi:lightbulb-outline
+      description: >-
+        Kan bruges i alle omskifterpositioner.
+        Vælg funktion og eventuelle egne mål her. Tomt = brug de fælles
+        mål. Egne mål erstatter (ikke tilføjer til) de fælles mål.
+      collapsed: true
+      input:
+        z2m_dimming_top_right_mode:
+          name: "ØVERST HØJRE · Langt tryk"
+          description: "Virker i alle tre omskifterpositioner."
+          default: custom
+          selector:
+            select:
+              mode: dropdown
+              options:
+                - label: "Brug eksisterende handling"
+                  value: custom
+                - label: "Øg lysstyrken"
+                  value: up
+                - label: "Sænk lysstyrken"
+                  value: down
+
+        z2m_dimming_top_right_lights:
+          name: "Lysentiteter · Øverst højre · ▶"
+          description: >-
+            Vælg et eller flere MQTT-lys eller Zigbee2MQTT-grupper, som
+            denne knap skal styre. Tomt = fælles mål.
+            Enhedens Home Assistant-navn skal svare til Z2M friendly name;
+            ellers angiv det korrekte navn i feltet herunder.
+          default: []
+          selector:
+            entity:
+              multiple: true
+              filter:
+                - domain: light
+                  integration: mqtt
+
+        z2m_dimming_top_right_topics:
+          name: "Friendly names/MQTT-topics · Øverst højre · ▶"
+          description: >-
+            Én pr. linje. For eksempel stue_spots eller
+            zigbee2mqtt/stue_spots/set. Kombineres med valgte lys ovenfor.
+            Hvis et af denne knaps målfelter udfyldes, erstatter det
+            de fælles mål. Identiske topics fjernes.
+          default: ""
+          selector:
+            text:
+              multiline: true
+
+    z2m_dimming_center_section:
+      name: "Dæmpning · Midten · ⏻"
+      icon: mdi:lightbulb-outline
+      description: >-
+        Kun med omskifter til VENSTRE (venstre pil). Tænd/sluk har ingen slip-hændelse.
+        Vælg funktion og eventuelle egne mål her. Tomt = brug de fælles
+        mål. Egne mål erstatter (ikke tilføjer til) de fælles mål.
+      collapsed: true
+      input:
+        z2m_dimming_center_mode:
+          name: "MIDTEN · Langt tryk"
+          description: "Kontinuerlig dæmpning virker kun med omskifteren til VENSTRE (venstre pil). Tænd/sluk har ikke en slip-hændelse."
+          default: custom
+          selector:
+            select:
+              mode: dropdown
+              options:
+                - label: "Brug eksisterende handling"
+                  value: custom
+                - label: "Øg lysstyrken"
+                  value: up
+                - label: "Sænk lysstyrken"
+                  value: down
+
+        z2m_dimming_center_lights:
+          name: "Lysentiteter · Midten · ⏻"
+          description: >-
+            Vælg et eller flere MQTT-lys eller Zigbee2MQTT-grupper, som
+            denne knap skal styre. Tomt = fælles mål.
+            Enhedens Home Assistant-navn skal svare til Z2M friendly name;
+            ellers angiv det korrekte navn i feltet herunder.
+          default: []
+          selector:
+            entity:
+              multiple: true
+              filter:
+                - domain: light
+                  integration: mqtt
+
+        z2m_dimming_center_topics:
+          name: "Friendly names/MQTT-topics · Midten · ⏻"
+          description: >-
+            Én pr. linje. For eksempel stue_spots eller
+            zigbee2mqtt/stue_spots/set. Kombineres med valgte lys ovenfor.
+            Hvis et af denne knaps målfelter udfyldes, erstatter det
+            de fælles mål. Identiske topics fjernes.
+          default: ""
+          selector:
+            text:
+              multiline: true
+
+    z2m_dimming_bottom_left_section:
+      name: "Dæmpning · Nederst venstre · ☀"
+      icon: mdi:lightbulb-outline
+      description: >-
+        Kan bruges i alle omskifterpositioner.
+        Vælg funktion og eventuelle egne mål her. Tomt = brug de fælles
+        mål. Egne mål erstatter (ikke tilføjer til) de fælles mål.
+      collapsed: true
+      input:
+        z2m_dimming_bottom_left_mode:
+          name: "NEDERST VENSTRE · ☀ Langt tryk"
+          description: "Virker i alle omskifterpositioner. Standard: Øg lysstyrken."
+          default: up
+          selector:
+            select:
+              mode: dropdown
+              options:
+                - label: "Brug eksisterende handling"
+                  value: custom
+                - label: "Øg lysstyrken"
+                  value: up
+                - label: "Sænk lysstyrken"
+                  value: down
+
+        z2m_dimming_bottom_left_lights:
+          name: "Lysentiteter · Nederst venstre · ☀"
+          description: >-
+            Vælg et eller flere MQTT-lys eller Zigbee2MQTT-grupper, som
+            denne knap skal styre. Tomt = fælles mål.
+            Enhedens Home Assistant-navn skal svare til Z2M friendly name;
+            ellers angiv det korrekte navn i feltet herunder.
+          default: []
+          selector:
+            entity:
+              multiple: true
+              filter:
+                - domain: light
+                  integration: mqtt
+
+        z2m_dimming_bottom_left_topics:
+          name: "Friendly names/MQTT-topics · Nederst venstre · ☀"
+          description: >-
+            Én pr. linje. For eksempel stue_spots eller
+            zigbee2mqtt/stue_spots/set. Kombineres med valgte lys ovenfor.
+            Hvis et af denne knaps målfelter udfyldes, erstatter det
+            de fælles mål. Identiske topics fjernes.
+          default: ""
+          selector:
+            text:
+              multiline: true
+
+    z2m_dimming_bottom_right_section:
+      name: "Dæmpning · Nederst højre · ☼"
+      icon: mdi:lightbulb-outline
+      description: >-
+        Kan bruges i alle omskifterpositioner.
+        Vælg funktion og eventuelle egne mål her. Tomt = brug de fælles
+        mål. Egne mål erstatter (ikke tilføjer til) de fælles mål.
+      collapsed: true
+      input:
+        z2m_dimming_bottom_right_mode:
+          name: "NEDERST HØJRE · ☼ Langt tryk"
+          description: "Virker i alle omskifterpositioner. Standard: Sænk lysstyrken."
+          default: down
+          selector:
+            select:
+              mode: dropdown
+              options:
+                - label: "Brug eksisterende handling"
+                  value: custom
+                - label: "Øg lysstyrken"
+                  value: up
+                - label: "Sænk lysstyrken"
+                  value: down
+
+        z2m_dimming_bottom_right_lights:
+          name: "Lysentiteter · Nederst højre · ☼"
+          description: >-
+            Vælg et eller flere MQTT-lys eller Zigbee2MQTT-grupper, som
+            denne knap skal styre. Tomt = fælles mål.
+            Enhedens Home Assistant-navn skal svare til Z2M friendly name;
+            ellers angiv det korrekte navn i feltet herunder.
+          default: []
+          selector:
+            entity:
+              multiple: true
+              filter:
+                - domain: light
+                  integration: mqtt
+
+        z2m_dimming_bottom_right_topics:
+          name: "Friendly names/MQTT-topics · Nederst højre · ☼"
+          description: >-
+            Én pr. linje. For eksempel stue_spots eller
+            zigbee2mqtt/stue_spots/set. Kombineres med valgte lys ovenfor.
+            Hvis et af denne knaps målfelter udfyldes, erstatter det
+            de fælles mål. Identiske topics fjernes.
+          default: ""
+          selector:
+            text:
+              multiline: true
 
     hold_actions:
       name: "Avanceret · Lange tryk (valgfrit)"
@@ -420,6 +600,16 @@ variables:
   z2m_dimming_center_mode: !input z2m_dimming_center_mode
   z2m_dimming_bottom_left_mode: !input z2m_dimming_bottom_left_mode
   z2m_dimming_bottom_right_mode: !input z2m_dimming_bottom_right_mode
+  z2m_dimming_top_left_lights: !input z2m_dimming_top_left_lights
+  z2m_dimming_top_left_topics: !input z2m_dimming_top_left_topics
+  z2m_dimming_top_right_lights: !input z2m_dimming_top_right_lights
+  z2m_dimming_top_right_topics: !input z2m_dimming_top_right_topics
+  z2m_dimming_center_lights: !input z2m_dimming_center_lights
+  z2m_dimming_center_topics: !input z2m_dimming_center_topics
+  z2m_dimming_bottom_left_lights: !input z2m_dimming_bottom_left_lights
+  z2m_dimming_bottom_left_topics: !input z2m_dimming_bottom_left_topics
+  z2m_dimming_bottom_right_lights: !input z2m_dimming_bottom_right_lights
+  z2m_dimming_bottom_right_topics: !input z2m_dimming_bottom_right_topics
   z2m_dimming_light: !input z2m_dimming_light
   z2m_dimming_extra_lights: !input z2m_dimming_extra_lights
   z2m_dimming_name_override: !input z2m_dimming_name_override
@@ -449,7 +639,7 @@ conditions:
 
 actions:
   - variables:
-      blueprint_version: "1.5.0"
+      blueprint_version: "1.6.0"
       raw_button_event: "{{ trigger.to_state.attributes.get('event_type', '') if trigger.to_state else '' }}"
       # Normalize the hardware event to a logical physical FUGA position.
       # Existing action input keys retain their meanings in Middle mode.
@@ -479,7 +669,7 @@ actions:
   # light entities, and explicit names/topics (also supports group names).
   # HA doesn't expose the exact discovered command_topic to templates.
   - variables:
-      z2m_dimming_topics: >-
+      z2m_dimming_global_topics: >-
         {% set base = z2m_dimming_base_topic | trim | trim('/') -%}
         {% set ns = namespace(names=[], topics=[]) -%}
         {% set primary = z2m_dimming_name_override | trim -%}
@@ -555,6 +745,53 @@ actions:
         } -%}
         {{ releases.get(z2m_dimming_button_key | trim, '') }}
 
+  # Resolve an individual button's selected targets or use shared defaults.
+  # Empty button-specific fields retain the pre-v1.6 shared-target behavior.
+  - variables:
+      z2m_dimming_topics: >-
+        {% set key = z2m_dimming_button_key | trim -%}
+        {% set config = {
+          'top_left': {'lights': z2m_dimming_top_left_lights, 'topics': z2m_dimming_top_left_topics},
+          'top_right': {'lights': z2m_dimming_top_right_lights, 'topics': z2m_dimming_top_right_topics},
+          'center': {'lights': z2m_dimming_center_lights, 'topics': z2m_dimming_center_topics},
+          'bottom_left': {'lights': z2m_dimming_bottom_left_lights, 'topics': z2m_dimming_bottom_left_topics},
+          'bottom_right': {'lights': z2m_dimming_bottom_right_lights, 'topics': z2m_dimming_bottom_right_topics}
+        } -%}
+        {% set own = config.get(key, {'lights': [], 'topics': ''}) -%}
+        {% set selected_lights = own.lights | default([], true) -%}
+        {% set selected_text = own.topics | default('', true) -%}
+        {% if selected_lights | count == 0 and selected_text | trim == '' -%}
+          {{ z2m_dimming_global_topics }}
+        {%- else -%}
+          {% set ns = namespace(names=[], topics=[]) -%}
+          {% set base = z2m_dimming_base_topic | trim | trim('/') -%}
+          {% for entity_id in selected_lights -%}
+            {% set name = device_attr(entity_id, 'name') | default('', true) | trim -%}
+            {% if name != '' -%}
+              {% set ns.names = ns.names + [name] -%}
+            {% endif -%}
+          {% endfor -%}
+          {% for line in selected_text.splitlines() -%}
+            {% set name = line | trim -%}
+            {% if name != '' and not name.startswith('#') -%}
+              {% set ns.names = ns.names + [name] -%}
+            {% endif -%}
+          {% endfor -%}
+          {% for name in ns.names -%}
+            {% if name.endswith('/set') and '/' in name -%}
+              {% set topic = name -%}
+            {% elif base != '' -%}
+              {% set topic = base ~ '/' ~ name ~ '/set' -%}
+            {% else -%}
+              {% set topic = '' -%}
+            {% endif -%}
+            {% if topic != '' and topic not in ns.topics -%}
+              {% set ns.topics = ns.topics + [topic] -%}
+            {% endif -%}
+          {% endfor -%}
+          {{ ns.topics }}
+        {%- endif %}
+
   # Short presses always retain their existing actions. Only selected
   # hold/release events are replaced by Zigbee2MQTT brightness_move.
   - choose:
@@ -573,8 +810,9 @@ actions:
             then:
               - stop: >-
                   Zigbee2MQTT-dæmpning er aktiv, men ingen MQTT-topics blev
-                  fundet. Vælg MQTT-lys-entiteter eller angiv friendly names
-                  eller hele MQTT-command-topics.
+                  fundet for denne knap. Vælg MQTT-lysentiteter eller angiv
+                  friendly names/fulde MQTT-topics under knappens sektion
+                  eller under de fælles indstillinger.
           - choose:
               - conditions:
                   - condition: template
