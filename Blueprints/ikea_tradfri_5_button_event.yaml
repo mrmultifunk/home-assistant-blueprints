@@ -1,9 +1,9 @@
 # IKEA TRÅDFRI E1524/E1810 – FUGA-konvertering til Zigbee2MQTT
-# Version: 1.2.4
+# Version: 1.3.0
 blueprint:
-  name: "IKEA TRÅDFRI – FUGA-fjernbetjening (Zigbee2MQTT) v1.2.4"
+  name: "IKEA TRÅDFRI – FUGA-fjernbetjening (Zigbee2MQTT) v1.3.0"
   description: |-
-    **IKEA TRÅDFRI · FUGA-fjernbetjening · v1.2.4**
+    **IKEA TRÅDFRI · FUGA-fjernbetjening · v1.3.0**
 
     Vælg selv, hvad hver knap på din FUGA-kontakt skal gøre. Blueprintet understøtter **alle tre positioner** på den lille mekaniske omskifter. **Midten er standard.**
 
@@ -31,6 +31,20 @@ blueprint:
     **Husk at tildele handlinger:** Knapperne har ingen standardhandling. Vælg f.eks. *Lys → Skift (toggle)* under den ønskede knap. Handlinger fra en tidligere automation overføres ikke automatisk.
 
     **Fejlfinding:** Fjernbetjeningsvælgeren viser kun MQTT-event-entiteter. Ukendte knaphændelser får en forklaring i automationssporingen (`raw_button_event` og `button_event`).
+
+    ### Valgfri Zigbee2MQTT-dæmpning
+
+    Aktivér *Kontinuerlig dæmpning* for at bruge sol-knappernes lange tryk til
+    `brightness_move` og deres slip-hændelser til `brightness_move: 0`.
+    Normal korttrykstyring og alle øvrige handlinger er uændrede. Hvis et
+    slip-event udebliver, stopper en sikkerheds-timeout kommandoen automatisk.
+    Lysentiteten bruges kun til at foreslå enhedens Zigbee2MQTT friendly name;
+    Home Assistant eksponerer ikke MQTT command_topic direkte i automationsskabeloner.
+    Brug manuel override ved navneforskel. MQTT-meddelelser sendes uden retain.
+
+    **Parallelle kørsler:** Dette blueprint anvender `mode: parallel` for at
+    reagere øjeblikkeligt på slip-hændelser, mens en timeout venter. Egendefinerede
+    handlinger kan derfor også køre samtidigt (tidligere var tilstanden `queued`).
 
     [FUGA-modellen på Printables](https://www.printables.com/model/93848-zigbee-til-danske-kontakter) · [Zigbee2MQTT – understøttede hændelser](https://www.zigbee2mqtt.io/devices/E1524_E1810.html)
   author: "mrmultifunk"
@@ -117,6 +131,78 @@ blueprint:
           selector:
             action: {}
 
+    z2m_dimming:
+      name: "Zigbee2MQTT · Kontinuerlig dæmpning (valgfrit)"
+      icon: mdi:brightness-6
+      description: >-
+        Hold sol-knapperne for kontinuerlig dæmpning og slip for at stoppe.
+        Vælg en MQTT-lys-entitet for at bruge enhedens registrerede navn som
+        Zigbee2MQTT friendly name. Dette er et best-effort opslag, ikke et
+        direkte opslag af MQTT command_topic. Hvis navnet er anderledes i
+        Zigbee2MQTT, angiv friendly name manuelt nedenfor.
+        Funktionen er slået fra som standard.
+      collapsed: true
+      input:
+        z2m_dimming_enabled:
+          name: "Aktivér kontinuerlig Zigbee2MQTT-dæmpning"
+          description: "Når aktiv, erstatter denne funktion de fire brugerdefinerede hold/slip-handlinger for de nederste knapper."
+          default: false
+          selector:
+            boolean: {}
+
+        z2m_dimming_light:
+          name: "Lysentitet (automatisk navneforslag)"
+          description: >-
+            Vælg en Zigbee2MQTT-lys- eller gruppeentitet fra MQTT.
+            Enhedens registrerede navn bruges som Zigbee2MQTT friendly name;
+            det er ikke nødvendigvis det samme, hvis enheden er omdøbt.
+          default: ""
+          selector:
+            entity:
+              filter:
+                - domain: light
+                  integration: mqtt
+
+        z2m_dimming_name_override:
+          name: "Friendly name (manuel override, valgfrit)"
+          description: >-
+            Udfyld kun hvis det automatiske navn ikke svarer til friendly name
+            i Zigbee2MQTT, eller hvis målgruppen ikke har en lysentitet.
+            Skriv kun friendly name, ikke 'zigbee2mqtt/' eller '/set'.
+          default: ""
+          selector:
+            text: {}
+
+        z2m_dimming_base_topic:
+          name: "Zigbee2MQTT base topic"
+          description: "Normalt zigbee2mqtt. Ret hvis du har ændret base_topic i Zigbee2MQTT."
+          default: zigbee2mqtt
+          selector:
+            text: {}
+
+        z2m_dimming_speed:
+          name: "Dæmpningshastighed (enheder/sekund)"
+          default: 40
+          selector:
+            number:
+              min: 10
+              max: 150
+              step: 5
+              mode: slider
+
+        z2m_dimming_timeout:
+          name: "Sikkerheds-timeout (sekunder)"
+          description: >-
+            Stopper automatisk ved manglende slip-hændelse. Standard 15 sekunder.
+            Vælg en værdi længere end et normalt langt tryk.
+          default: 15
+          selector:
+            number:
+              min: 5
+              max: 60
+              step: 1
+              mode: slider
+
     hold_actions:
       name: "Avanceret · Lange tryk (valgfrit)"
       icon: mdi:gesture-tap-hold
@@ -201,9 +287,17 @@ blueprint:
 
 variables:
   switch_position: !input switch_position
+  z2m_dimming_remote: !input remote_event
+  z2m_dimming_enabled: !input z2m_dimming_enabled
+  z2m_dimming_light: !input z2m_dimming_light
+  z2m_dimming_name_override: !input z2m_dimming_name_override
+  z2m_dimming_base_topic: !input z2m_dimming_base_topic
+  z2m_dimming_speed: !input z2m_dimming_speed
+  z2m_dimming_timeout: !input z2m_dimming_timeout
 
-mode: queued
-max: 20
+# Watchdog waits must not block subsequent release actions.
+mode: parallel
+max: 30
 max_exceeded: silent
 
 triggers:
@@ -222,7 +316,7 @@ conditions:
 
 actions:
   - variables:
-      blueprint_version: "1.2.4"
+      blueprint_version: "1.3.0"
       raw_button_event: "{{ trigger.to_state.attributes.get('event_type', '') if trigger.to_state else '' }}"
       # Normalize the hardware event to a logical physical FUGA position.
       # Existing action input keys retain their meanings in Middle mode.
@@ -246,6 +340,93 @@ actions:
         {{ left_map.get(ev, ev) if switch_position == 'left'
            else right_map.get(ev, ev) if switch_position == 'right'
            else ev }}
+
+
+  # Derive the friendly name from the selected MQTT light device when possible.
+  # HA templates do not expose the exact MQTT discovery command_topic.
+  - variables:
+      z2m_dimming_target_name: >-
+        {% if z2m_dimming_name_override | trim != '' -%}
+          {{ z2m_dimming_name_override | trim }}
+        {%- elif z2m_dimming_light | trim != '' -%}
+          {{ device_attr(z2m_dimming_light, 'name') | default('', true) | trim }}
+        {%- endif %}
+  - variables:
+      z2m_dimming_topic: >-
+        {% if z2m_dimming_target_name | trim != '' and z2m_dimming_base_topic | trim != '' -%}
+          {{ z2m_dimming_base_topic | trim | trim('/') }}/{{ z2m_dimming_target_name | trim }}/set
+        {%- endif %}
+
+  # Built-in hold/release handling takes priority only when explicitly enabled.
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: >-
+              {{ z2m_dimming_enabled and
+                 button_event in ['brightness_up_hold', 'brightness_down_hold',
+                                  'brightness_up_release', 'brightness_down_release'] }}
+        sequence:
+          - if:
+              - condition: template
+                value_template: "{{ z2m_dimming_topic | trim == '' }}"
+            then:
+              - stop: >-
+                  Zigbee2MQTT-dæmpning er aktiv, men mål-topic kunne ikke
+                  bestemmes. Vælg en MQTT-lys-entitet eller angiv friendly name.
+          - choose:
+              # Hold initiates continuous movement. Watch for release or
+              # the opposite direction. A lost release triggers the timeout.
+              - conditions:
+                  - condition: template
+                    value_template: >-
+                      {{ button_event in ['brightness_up_hold', 'brightness_down_hold'] }}
+                sequence:
+                  - variables:
+                      z2m_dimming_direction: >-
+                        {{ 1 if button_event == 'brightness_up_hold' else -1 }}
+                  - action: mqtt.publish
+                    data:
+                      topic: "{{ z2m_dimming_topic }}"
+                      payload: >-
+                        {{ {'brightness_move': (z2m_dimming_direction | int) *
+                           (z2m_dimming_speed | int)} | to_json }}
+                      retain: false
+                  # A wait template also checks the current state, avoiding
+                  # a missed release if it arrives during the MQTT publish.
+                  - wait_template: >-
+                      {% if button_event == 'brightness_up_hold' -%}
+                        {{ state_attr(z2m_dimming_remote, 'event_type')
+                           in ['brightness_up_release', 'brightness_down_hold', 'brightness_down_release'] }}
+                      {%- else -%}
+                        {{ state_attr(z2m_dimming_remote, 'event_type')
+                           in ['brightness_down_release', 'brightness_up_hold', 'brightness_up_release'] }}
+                      {%- endif %}
+                    timeout:
+                      seconds: "{{ z2m_dimming_timeout | int(15) }}"
+                    continue_on_timeout: true
+                  - if:
+                      - condition: template
+                        value_template: "{{ not wait.completed }}"
+                    then:
+                      # A stop is sent even when the remote fails to emit a release.
+                      - action: mqtt.publish
+                        data:
+                          topic: "{{ z2m_dimming_topic }}"
+                          payload: '{"brightness_move": 0}'
+                          retain: false
+
+              # Release is processed in a separate parallel run; never wait.
+              - conditions:
+                  - condition: template
+                    value_template: >-
+                      {{ button_event in ['brightness_up_release', 'brightness_down_release'] }}
+                sequence:
+                  - action: mqtt.publish
+                    data:
+                      topic: "{{ z2m_dimming_topic }}"
+                      payload: '{"brightness_move": 0}'
+                      retain: false
+          - stop: "Zigbee2MQTT-dæmpningshændelsen er behandlet."
 
   - choose:
       - conditions:
