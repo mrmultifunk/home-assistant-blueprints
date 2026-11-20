@@ -391,22 +391,22 @@ actions:
                         {{ {'brightness_move': (z2m_dimming_direction | int) *
                            (z2m_dimming_speed | int)} | to_json }}
                       retain: false
-                  - wait_for_trigger:
-                      - trigger: template
-                        value_template: >-
-                          {% if button_event == 'brightness_up_hold' -%}
-                            {{ state_attr(z2m_dimming_remote, 'event_type')
-                               in ['brightness_up_release', 'brightness_down_hold', 'brightness_down_release'] }}
-                          {%- else -%}
-                            {{ state_attr(z2m_dimming_remote, 'event_type')
-                               in ['brightness_down_release', 'brightness_up_hold', 'brightness_up_release'] }}
-                          {%- endif %}
+                  # A wait template also checks the current state, avoiding
+                  # a missed release if it arrives during the MQTT publish.
+                  - wait_template: >-
+                      {% if button_event == 'brightness_up_hold' -%}
+                        {{ state_attr(z2m_dimming_remote, 'event_type')
+                           in ['brightness_up_release', 'brightness_down_hold', 'brightness_down_release'] }}
+                      {%- else -%}
+                        {{ state_attr(z2m_dimming_remote, 'event_type')
+                           in ['brightness_down_release', 'brightness_up_hold', 'brightness_up_release'] }}
+                      {%- endif %}
                     timeout:
                       seconds: "{{ z2m_dimming_timeout | int(15) }}"
                     continue_on_timeout: true
                   - if:
                       - condition: template
-                        value_template: "{{ wait.trigger is none }}"
+                        value_template: "{{ not wait.completed }}"
                     then:
                       # A stop is sent even when the remote fails to emit a release.
                       - action: mqtt.publish
