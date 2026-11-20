@@ -1,9 +1,9 @@
 # IKEA TRÅDFRI E1524/E1810 – FUGA-konvertering til Zigbee2MQTT
-# Version: 1.8.0
+# Version: 1.9.0
 blueprint:
-  name: "IKEA TRÅDFRI – FUGA-fjernbetjening (Zigbee2MQTT) v1.8.0"
+  name: "IKEA TRÅDFRI – FUGA-fjernbetjening (Zigbee2MQTT) v1.9.0"
   description: |-
-    **IKEA TRÅDFRI · FUGA-fjernbetjening · v1.8.0**
+    **IKEA TRÅDFRI · FUGA-fjernbetjening · v1.9.0**
 
     Vælg selv, hvad hver knap på din FUGA-kontakt skal gøre. Blueprintet understøtter **alle tre positioner** på den lille mekaniske omskifter. **Midten er standard.**
 
@@ -53,14 +53,15 @@ blueprint:
 
     Hvis en knap vælges i en position, der ikke udsender slip, falder
     den tilbage på sin eksisterende brugerdefinerede hold-handling.
-    **Enkel opsætning:** Vælg ét eller flere fælles MQTT-lys i én
-    flervælger. Vælg derefter funktion og eventuelt egne lys pr. knap.
-    Tomme knapfelter bruger de fælles lys.
+    **Enkel opsætning:** Vælg retning og lys direkte under hver fysisk
+    knap. Vil flere knapper bruge samme lys, kan du vælge standardlys
+    under de generelle indstillinger. Tomme knapmål bruger disse.
 
-    **Manuel konfiguration:** Hvert manuelt MQTT-topic ligger nu under
-    den fysiske knap, det tilhører. Gamle fælles mål er samlet ved
-    Fælles dæmpningsindstillinger for bagudkompatibilitet. Entitetens ID
-    (efter 'light.') anvendes som best-effort friendly-name-gæt.
+    **Manuel konfiguration:** Hvert manuelt MQTT-topic ligger under den
+    fysiske knap, det tilhører. Entitetens ID (efter 'light.') bruges
+    som best-effort friendly-name-gæt. Tidligere primære/ekstra
+    legacy-mål understøttes ikke længere; vælg dem i den fælles
+    flervælger eller direkte under knapperne.
 
     **Vis gættet topic:** Aktivér Vis beregnede MQTT-topics (diagnose)
     midlertidigt. Ved næste lange tryk viser en Home Assistant-notifikation
@@ -166,10 +167,10 @@ blueprint:
       name: "Zigbee2MQTT · Fælles dæmpningsindstillinger"
       icon: mdi:brightness-6
       description: >-
-        Her vælger du kun fælles lys, hastighed, timeout og diagnose.
-        Hver knap har sin egen sektion med retning, lys og manuel
-        topic-indtastning. Tomme knapmål bruger fælles mål.
-        Brug diagnosefunktionen til at se de faktisk anvendte topics.
+        Generelle indstillinger: aktivering, hastighed, timeout, diagnose
+        og eventuelt standardlys. Hver fysisk knap har sin egen sektion
+        med retning, lys og manuel topic-indtastning. Tomme knapmål
+        bruger de valgte standardlys.
       collapsed: true
       input:
         z2m_dimming_enabled:
@@ -182,10 +183,8 @@ blueprint:
         z2m_dimming_shared_lights:
           name: "Fælles lys (vælg ét eller flere)"
           description: >-
-            Normal opsætning: vælg lys eller Zigbee2MQTT-grupper her.
-            Hver knap kan overstyre med egne lys. De gamle fælles mål
-            findes under Avanceret og bruges automatisk, indtil du
-            vælger noget her.
+            Valgfrit standardvalg til knapper uden egne mål.
+            Du kan også vælge alle lys individuelt under hver knap.
           default: []
           selector:
             entity:
@@ -233,65 +232,6 @@ blueprint:
               step: 1
               mode: slider
 
-    z2m_dimming_advanced:
-      name: "Fælles mål · Tidligere indstillinger (valgfrit)"
-      icon: mdi:archive-cog-outline
-      description: >-
-        Kun nødvendigt for ældre opsætninger og ændring af Z2M base topic.
-        De eksisterende fælles input bevares, så dine automationer ikke
-        mister deres indstillinger. Topics til en enkelt knap angives
-        under den pågældende knap.
-      collapsed: true
-      input:
-        z2m_dimming_light:
-          name: "Primær lysentitet (eksisterende mål)"
-          description: >-
-            Behold den tidligere valgte MQTT-lys- eller gruppeentitet her.
-            Navnet bruges som Zigbee2MQTT friendly name, hvis det passer.
-            Alle ekstra valgte lys nedenfor styres også.
-          default: ""
-          selector:
-            entity:
-              filter:
-                - domain: light
-                  integration: mqtt
-
-        z2m_dimming_extra_lights:
-          name: "Yderligere lysentiteter (vælg flere)"
-          description: >-
-            Tilføj flere MQTT-lys eller Zigbee2MQTT-gruppeentiteter.
-            Alle valgte lys modtager samme brightness_move.
-            Friendly name forsøges udledt af enhedens navn i Home Assistant.
-          default: []
-          selector:
-            entity:
-              multiple: true
-              filter:
-                - domain: light
-                  integration: mqtt
-
-        z2m_dimming_name_override:
-          name: "Primært friendly name (manuel override)"
-          description: >-
-            Som før: overstyrer den primære lysentitets friendly name, eller
-            bruges alene som primært mål. Yderligere mål tilføjes nedenfor.
-            Skriv kun friendly name, ikke 'zigbee2mqtt/' eller '/set'.
-          default: ""
-          selector:
-            text: {}
-
-        z2m_dimming_extra_topics:
-          name: "Yderligere friendly names eller MQTT-topics (én pr. linje)"
-          description: >-
-            Eksempel: stue_spots (friendly name), koekkenspots eller
-            zigbee2mqtt/alrum_lys/set (fuldt topic). Grupper kan også
-            angives med deres friendly name. Én pr. linje, ingen kommaer.
-            Tomme linjer og linjer, der starter med #, ignoreres.
-          default: ""
-          selector:
-            text:
-              multiline: true
-
         z2m_dimming_base_topic:
           name: "Zigbee2MQTT base topic"
           description: "Normalt zigbee2mqtt. Ret hvis du har ændret base_topic i Zigbee2MQTT."
@@ -304,7 +244,7 @@ blueprint:
       icon: mdi:lightbulb-outline
       description: >-
         Kun med omskifteren i midten (venstre pil). Vælg retning, lys og eventuelt manuelt MQTT-topic her.
-        Tomt lysvalg betyder fælles mål.
+        Tomt lysvalg bruger standardlys, hvis valgt.
       collapsed: true
       input:
         z2m_dimming_top_left_mode:
@@ -325,7 +265,7 @@ blueprint:
         z2m_dimming_top_left_lights:
           name: "Lysentiteter · Øverst venstre · ◀"
           description: >-
-            Vælg et eller flere MQTT-lys eller grupper. Tomt = fælles mål.
+            Vælg et eller flere MQTT-lys eller grupper. Tomt = standardlys (hvis valgt).
             Topic gættes fra entitets-ID; brug feltet nedenfor ved fejl.
           default: []
           selector:
@@ -351,7 +291,7 @@ blueprint:
       icon: mdi:lightbulb-outline
       description: >-
         Virker i alle omskifterpositioner. Vælg retning, lys og eventuelt manuelt MQTT-topic her.
-        Tomt lysvalg betyder fælles mål.
+        Tomt lysvalg bruger standardlys, hvis valgt.
       collapsed: true
       input:
         z2m_dimming_top_right_mode:
@@ -372,7 +312,7 @@ blueprint:
         z2m_dimming_top_right_lights:
           name: "Lysentiteter · Øverst højre · ▶"
           description: >-
-            Vælg et eller flere MQTT-lys eller grupper. Tomt = fælles mål.
+            Vælg et eller flere MQTT-lys eller grupper. Tomt = standardlys (hvis valgt).
             Topic gættes fra entitets-ID; brug feltet nedenfor ved fejl.
           default: []
           selector:
@@ -398,7 +338,7 @@ blueprint:
       icon: mdi:lightbulb-outline
       description: >-
         Kun med omskifteren til venstre (venstre pil). Vælg retning, lys og eventuelt manuelt MQTT-topic her.
-        Tomt lysvalg betyder fælles mål.
+        Tomt lysvalg bruger standardlys, hvis valgt.
       collapsed: true
       input:
         z2m_dimming_center_mode:
@@ -419,7 +359,7 @@ blueprint:
         z2m_dimming_center_lights:
           name: "Lysentiteter · Midten · ⏻"
           description: >-
-            Vælg et eller flere MQTT-lys eller grupper. Tomt = fælles mål.
+            Vælg et eller flere MQTT-lys eller grupper. Tomt = standardlys (hvis valgt).
             Topic gættes fra entitets-ID; brug feltet nedenfor ved fejl.
           default: []
           selector:
@@ -445,7 +385,7 @@ blueprint:
       icon: mdi:lightbulb-outline
       description: >-
         Virker i alle omskifterpositioner. Vælg retning, lys og eventuelt manuelt MQTT-topic her.
-        Tomt lysvalg betyder fælles mål.
+        Tomt lysvalg bruger standardlys, hvis valgt.
       collapsed: true
       input:
         z2m_dimming_bottom_left_mode:
@@ -466,7 +406,7 @@ blueprint:
         z2m_dimming_bottom_left_lights:
           name: "Lysentiteter · Nederst venstre · ☀"
           description: >-
-            Vælg et eller flere MQTT-lys eller grupper. Tomt = fælles mål.
+            Vælg et eller flere MQTT-lys eller grupper. Tomt = standardlys (hvis valgt).
             Topic gættes fra entitets-ID; brug feltet nedenfor ved fejl.
           default: []
           selector:
@@ -492,7 +432,7 @@ blueprint:
       icon: mdi:lightbulb-outline
       description: >-
         Virker i alle omskifterpositioner. Vælg retning, lys og eventuelt manuelt MQTT-topic her.
-        Tomt lysvalg betyder fælles mål.
+        Tomt lysvalg bruger standardlys, hvis valgt.
       collapsed: true
       input:
         z2m_dimming_bottom_right_mode:
@@ -513,7 +453,7 @@ blueprint:
         z2m_dimming_bottom_right_lights:
           name: "Lysentiteter · Nederst højre · ☼"
           description: >-
-            Vælg et eller flere MQTT-lys eller grupper. Tomt = fælles mål.
+            Vælg et eller flere MQTT-lys eller grupper. Tomt = standardlys (hvis valgt).
             Topic gættes fra entitets-ID; brug feltet nedenfor ved fejl.
           default: []
           selector:
@@ -637,10 +577,6 @@ variables:
   z2m_dimming_bottom_left_topics: !input z2m_dimming_bottom_left_topics
   z2m_dimming_bottom_right_lights: !input z2m_dimming_bottom_right_lights
   z2m_dimming_bottom_right_topics: !input z2m_dimming_bottom_right_topics
-  z2m_dimming_light: !input z2m_dimming_light
-  z2m_dimming_extra_lights: !input z2m_dimming_extra_lights
-  z2m_dimming_name_override: !input z2m_dimming_name_override
-  z2m_dimming_extra_topics: !input z2m_dimming_extra_topics
   z2m_dimming_base_topic: !input z2m_dimming_base_topic
   z2m_dimming_speed: !input z2m_dimming_speed
   z2m_dimming_timeout: !input z2m_dimming_timeout
@@ -666,7 +602,7 @@ conditions:
 
 actions:
   - variables:
-      blueprint_version: "1.8.0"
+      blueprint_version: "1.9.0"
       raw_button_event: "{{ trigger.to_state.attributes.get('event_type', '') if trigger.to_state else '' }}"
       # Normalize the hardware event to a logical physical FUGA position.
       # Existing action input keys retain their meanings in Middle mode.
@@ -692,52 +628,22 @@ actions:
            else ev }}
 
 
-  # Build unique MQTT command topics from legacy inputs, multiple MQTT
-  # light entities, and explicit names/topics (also supports group names).
-  # HA doesn't expose the exact discovered command_topic to templates.
+  # Build the shared default topics from the single multi-entity selector.
+  # Specific buttons may override these through their own entity/topic fields.
   - variables:
       z2m_dimming_global_topics: >-
         {% set base = z2m_dimming_base_topic | trim | trim('/') -%}
-        {% set ns = namespace(names=[], topics=[]) -%}
-        {% if z2m_dimming_shared_lights | count > 0 -%}
-          {# New selector replaces the legacy primary and extra-light fields. #}
+        {% set ns = namespace(topics=[]) -%}
+        {% if base != '' -%}
           {% for ent in z2m_dimming_shared_lights -%}
             {% if ent.startswith('light.') -%}
-              {% set ns.names = ns.names + [ent.split('.', 1)[1]] -%}
-            {% endif -%}
-          {% endfor -%}
-        {% else -%}
-          {% set primary = z2m_dimming_name_override | trim -%}
-          {% if primary == '' and z2m_dimming_light | trim != '' -%}
-            {% set primary = z2m_dimming_light.split('.', 1)[1] -%}
-          {% endif -%}
-          {% if primary != '' -%}
-            {% set ns.names = ns.names + [primary] -%}
-          {% endif -%}
-          {% for ent in z2m_dimming_extra_lights -%}
-            {% if ent.startswith('light.') -%}
-              {% set ns.names = ns.names + [ent.split('.', 1)[1]] -%}
+              {% set topic = base ~ '/' ~ ent.split('.', 1)[1] ~ '/set' -%}
+              {% if topic not in ns.topics -%}
+                {% set ns.topics = ns.topics + [topic] -%}
+              {% endif -%}
             {% endif -%}
           {% endfor -%}
         {% endif -%}
-        {% for line in z2m_dimming_extra_topics.splitlines() -%}
-          {% set value = line | trim -%}
-          {% if value != '' and not value.startswith('#') -%}
-            {% set ns.names = ns.names + [value] -%}
-          {% endif -%}
-        {% endfor -%}
-        {% for name in ns.names -%}
-          {% if name.endswith('/set') and '/' in name -%}
-            {% set topic = name -%}
-          {% elif base != '' -%}
-            {% set topic = base ~ '/' ~ name ~ '/set' -%}
-          {% else -%}
-            {% set topic = '' -%}
-          {% endif -%}
-          {% if topic != '' and topic not in ns.topics -%}
-            {% set ns.topics = ns.topics + [topic] -%}
-          {% endif -%}
-        {% endfor -%}
         {{ ns.topics }}
 
   # Map normalized hardware events to physical buttons. Continuous dimming
@@ -844,11 +750,7 @@ actions:
           'bottom_right': z2m_dimming_bottom_right_topics
         }.get(key, '') -%}
         {% if selected | count == 0 and manual | trim == '' -%}
-          {% if z2m_dimming_shared_lights | count > 0 -%}
-            {% set selected = z2m_dimming_shared_lights -%}
-          {% else -%}
-            {% set selected = ([z2m_dimming_light] if z2m_dimming_light | trim != '' else []) + z2m_dimming_extra_lights -%}
-          {% endif -%}
+          {% set selected = z2m_dimming_shared_lights -%}
         {% endif -%}
         {% set ns = namespace(topics=[]) -%}
         {% set base = z2m_dimming_base_topic | trim | trim('/') -%}
@@ -880,9 +782,9 @@ actions:
             then:
               - stop: >-
                   Zigbee2MQTT-dæmpning er aktiv, men ingen MQTT-topics blev
-                  fundet for denne knap. Vælg MQTT-lysentiteter eller angiv
-                  friendly names/fulde MQTT-topics under knappens sektion
-                  eller under de fælles indstillinger.
+                  fundet for denne knap. Vælg lysentiteter eller angiv
+                  friendly names/fulde topics under knappens sektion,
+                  eller vælg standardlys i de generelle indstillinger.
           - choose:
               - conditions:
                   - condition: template
