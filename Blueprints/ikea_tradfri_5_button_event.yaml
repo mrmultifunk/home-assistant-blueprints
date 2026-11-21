@@ -1,9 +1,9 @@
 # IKEA TRÅDFRI E1524/E1810 – FUGA-konvertering til Zigbee2MQTT
-# Version: 1.10.0
+# Version: 1.11.0
 blueprint:
-  name: "IKEA TRÅDFRI – FUGA-fjernbetjening (Zigbee2MQTT) v1.10.0"
+  name: "IKEA TRÅDFRI – FUGA-fjernbetjening (Zigbee2MQTT) v1.11.0"
   description: |-
-    **IKEA TRÅDFRI · FUGA-fjernbetjening · v1.10.0**
+    **IKEA TRÅDFRI · FUGA-fjernbetjening · v1.11.0**
 
     Konfigurér kort tryk, langt tryk, slip og Zigbee2MQTT-dæmpning **under hver fysisk knap**. Vælg først omskifterpositionen under **Fjernbetjening og omskifter**.
 
@@ -30,7 +30,7 @@ blueprint:
 
     **Kontinuerlig dæmpning (valgfrit):** Aktivér den under *Dæmpning · Generelle indstillinger*. Vælg derefter *Øg lysstyrken* eller *Sænk lysstyrken* under den relevante knap. Egne hold/slip-handlinger bruges, når den indbyggede dæmpning ikke overtager hændelsen.
 
-    **Lys og MQTT-topics:** Vælg en eller flere lysentiteter direkte under knappen. Har den ingen egne mål, bruges valgfri standardlys. Et præcist MQTT-topic kan angives under samme knap, hvis det automatiske gæt ikke passer.
+    **Lys og MQTT-topics:** Vælg én eller flere lysentiteter under hver knap, der skal dæmpe. Alternativt kan du angive et præcist MQTT-topic samme sted. Knapper uden valgte mål sender ikke dæmpekommandoer.
 
     **Slip og sikkerhed:** Lyset stopper normalt, når knappen slippes (`brightness_move: 0`). Hvis slip-hændelsen udebliver, sender blueprintet automatisk stop efter den valgte sikkerheds-timeout.
 
@@ -79,8 +79,8 @@ blueprint:
       name: "Dæmpning · Generelle indstillinger"
       icon: mdi:brightness-6
       description: >-
-        Aktivér dæmpning, vælg eventuelle standardlys, hastighed og timeout.
-        Vælg retning, lys og manuelle topics under de enkelte knapper.
+        Aktivér dæmpning, justér hastighed og sikkerheds-timeout.
+        Vælg lys og eventuelle manuelle MQTT-topics under hver enkelt knap.
       collapsed: true
       input:
         z2m_dimming_enabled:
@@ -89,19 +89,6 @@ blueprint:
           default: false
           selector:
             boolean: {}
-
-        z2m_dimming_shared_lights:
-          name: "Standardlys (valgfrit)"
-          description: >-
-            Bruges kun af knapper, hvor både lysvalg og manuelle
-            MQTT-topics er tomme. Flere lys kan vælges.
-          default: []
-          selector:
-            entity:
-              multiple: true
-              filter:
-                - domain: light
-                  integration: mqtt
 
         z2m_dimming_debug_topics:
           name: "Vis anvendte MQTT-topics (diagnose)"
@@ -149,7 +136,7 @@ blueprint:
       icon: mdi:arrow-left
       description: >-
         Venstre pil i midterposition. Tænd/sluk i venstre/højre position (ingen slip-hændelse). Alle handlinger og lysmål for denne knap findes her.
-        Hvis lys og MQTT-topics er tomme, bruges eventuelle standardlys.
+        For dæmpning skal du vælge mindst ét lys eller MQTT-topic under knappen.
       collapsed: true
       input:
         arrow_left_click_action:
@@ -167,7 +154,7 @@ blueprint:
             select:
               mode: dropdown
               options:
-                - label: "Brug eksisterende handling"
+                - label: "Brug egen handling (nedenfor)"
                   value: custom
                 - label: "Øg lysstyrken"
                   value: up
@@ -177,8 +164,8 @@ blueprint:
         z2m_dimming_top_left_lights:
           name: "Lys (vælg flere)"
           description: >-
-            Vælg de lys, denne knap skal styre. Lad både lys og manuelt
-            topic være tomme for at bruge standardlys.
+            Vælg lys til denne knap. Manuelt MQTT-topic kan bruges
+            nedenfor, hvis topic-gættet ikke passer.
           default: []
           selector:
             entity:
@@ -200,7 +187,7 @@ blueprint:
 
         arrow_left_hold_action:
           name: "Egen handling · Langt tryk"
-          description: "Bruges kun når langt tryk er indstillet til 'Brug eksisterende handling'."
+          description: "Bruges, når du vælger 'Brug egen handling (nedenfor)' ovenfor."
           default: []
           selector:
             action: {}
@@ -217,7 +204,7 @@ blueprint:
       icon: mdi:arrow-right
       description: >-
         Højre pil i alle omskifterpositioner. Alle handlinger og lysmål for denne knap findes her.
-        Hvis lys og MQTT-topics er tomme, bruges eventuelle standardlys.
+        For dæmpning skal du vælge mindst ét lys eller MQTT-topic under knappen.
       collapsed: true
       input:
         arrow_right_click_action:
@@ -235,7 +222,7 @@ blueprint:
             select:
               mode: dropdown
               options:
-                - label: "Brug eksisterende handling"
+                - label: "Brug egen handling (nedenfor)"
                   value: custom
                 - label: "Øg lysstyrken"
                   value: up
@@ -245,8 +232,8 @@ blueprint:
         z2m_dimming_top_right_lights:
           name: "Lys (vælg flere)"
           description: >-
-            Vælg de lys, denne knap skal styre. Lad både lys og manuelt
-            topic være tomme for at bruge standardlys.
+            Vælg lys til denne knap. Manuelt MQTT-topic kan bruges
+            nedenfor, hvis topic-gættet ikke passer.
           default: []
           selector:
             entity:
@@ -268,7 +255,7 @@ blueprint:
 
         arrow_right_hold_action:
           name: "Egen handling · Langt tryk"
-          description: "Bruges kun når langt tryk er indstillet til 'Brug eksisterende handling'."
+          description: "Bruges, når du vælger 'Brug egen handling (nedenfor)' ovenfor."
           default: []
           selector:
             action: {}
@@ -285,7 +272,7 @@ blueprint:
       icon: mdi:power
       description: >-
         Tænd/sluk i midten, venstre pil i venstre position, link/parring i højre position. Alle handlinger og lysmål for denne knap findes her.
-        Hvis lys og MQTT-topics er tomme, bruges eventuelle standardlys.
+        For dæmpning skal du vælge mindst ét lys eller MQTT-topic under knappen.
       collapsed: true
       input:
         center_click_action:
@@ -303,7 +290,7 @@ blueprint:
             select:
               mode: dropdown
               options:
-                - label: "Brug eksisterende handling"
+                - label: "Brug egen handling (nedenfor)"
                   value: custom
                 - label: "Øg lysstyrken"
                   value: up
@@ -313,8 +300,8 @@ blueprint:
         z2m_dimming_center_lights:
           name: "Lys (vælg flere)"
           description: >-
-            Vælg de lys, denne knap skal styre. Lad både lys og manuelt
-            topic være tomme for at bruge standardlys.
+            Vælg lys til denne knap. Manuelt MQTT-topic kan bruges
+            nedenfor, hvis topic-gættet ikke passer.
           default: []
           selector:
             entity:
@@ -336,7 +323,7 @@ blueprint:
 
         center_hold_action:
           name: "Egen handling · Langt tryk"
-          description: "Bruges kun når langt tryk er indstillet til 'Brug eksisterende handling'."
+          description: "Bruges, når du vælger 'Brug egen handling (nedenfor)' ovenfor."
           default: []
           selector:
             action: {}
@@ -353,7 +340,7 @@ blueprint:
       icon: mdi:brightness-7
       description: >-
         Stor sol i alle omskifterpositioner. Alle handlinger og lysmål for denne knap findes her.
-        Hvis lys og MQTT-topics er tomme, bruges eventuelle standardlys.
+        For dæmpning skal du vælge mindst ét lys eller MQTT-topic under knappen.
       collapsed: true
       input:
         brightness_up_click_action:
@@ -371,7 +358,7 @@ blueprint:
             select:
               mode: dropdown
               options:
-                - label: "Brug eksisterende handling"
+                - label: "Brug egen handling (nedenfor)"
                   value: custom
                 - label: "Øg lysstyrken"
                   value: up
@@ -381,8 +368,8 @@ blueprint:
         z2m_dimming_bottom_left_lights:
           name: "Lys (vælg flere)"
           description: >-
-            Vælg de lys, denne knap skal styre. Lad både lys og manuelt
-            topic være tomme for at bruge standardlys.
+            Vælg lys til denne knap. Manuelt MQTT-topic kan bruges
+            nedenfor, hvis topic-gættet ikke passer.
           default: []
           selector:
             entity:
@@ -404,7 +391,7 @@ blueprint:
 
         brightness_up_hold_action:
           name: "Egen handling · Langt tryk"
-          description: "Bruges kun når langt tryk er indstillet til 'Brug eksisterende handling'."
+          description: "Bruges, når du vælger 'Brug egen handling (nedenfor)' ovenfor."
           default: []
           selector:
             action: {}
@@ -421,7 +408,7 @@ blueprint:
       icon: mdi:brightness-4
       description: >-
         Lille sol i alle omskifterpositioner. Alle handlinger og lysmål for denne knap findes her.
-        Hvis lys og MQTT-topics er tomme, bruges eventuelle standardlys.
+        For dæmpning skal du vælge mindst ét lys eller MQTT-topic under knappen.
       collapsed: true
       input:
         brightness_down_click_action:
@@ -439,7 +426,7 @@ blueprint:
             select:
               mode: dropdown
               options:
-                - label: "Brug eksisterende handling"
+                - label: "Brug egen handling (nedenfor)"
                   value: custom
                 - label: "Øg lysstyrken"
                   value: up
@@ -449,8 +436,8 @@ blueprint:
         z2m_dimming_bottom_right_lights:
           name: "Lys (vælg flere)"
           description: >-
-            Vælg de lys, denne knap skal styre. Lad både lys og manuelt
-            topic være tomme for at bruge standardlys.
+            Vælg lys til denne knap. Manuelt MQTT-topic kan bruges
+            nedenfor, hvis topic-gættet ikke passer.
           default: []
           selector:
             entity:
@@ -472,7 +459,7 @@ blueprint:
 
         brightness_down_hold_action:
           name: "Egen handling · Langt tryk"
-          description: "Bruges kun når langt tryk er indstillet til 'Brug eksisterende handling'."
+          description: "Bruges, når du vælger 'Brug egen handling (nedenfor)' ovenfor."
           default: []
           selector:
             action: {}
@@ -488,7 +475,6 @@ variables:
   switch_position: !input switch_position
   z2m_dimming_remote: !input remote_event
   z2m_dimming_enabled: !input z2m_dimming_enabled
-  z2m_dimming_shared_lights: !input z2m_dimming_shared_lights
   z2m_dimming_debug_topics: !input z2m_dimming_debug_topics
   z2m_dimming_top_left_mode: !input z2m_dimming_top_left_mode
   z2m_dimming_top_right_mode: !input z2m_dimming_top_right_mode
@@ -530,7 +516,7 @@ conditions:
 
 actions:
   - variables:
-      blueprint_version: "1.10.0"
+      blueprint_version: "1.11.0"
       raw_button_event: "{{ trigger.to_state.attributes.get('event_type', '') if trigger.to_state else '' }}"
       # Normalize the hardware event to a logical physical FUGA position.
       # Existing action input keys retain their meanings in Middle mode.
@@ -555,24 +541,6 @@ actions:
            else right_map.get(ev, ev) if switch_position == 'right'
            else ev }}
 
-
-  # Build the shared default topics from the single multi-entity selector.
-  # Specific buttons may override these through their own entity/topic fields.
-  - variables:
-      z2m_dimming_global_topics: >-
-        {% set base = z2m_dimming_base_topic | trim | trim('/') -%}
-        {% set ns = namespace(topics=[]) -%}
-        {% if base != '' -%}
-          {% for ent in z2m_dimming_shared_lights -%}
-            {% if ent.startswith('light.') -%}
-              {% set topic = base ~ '/' ~ ent.split('.', 1)[1] ~ '/set' -%}
-              {% if topic not in ns.topics -%}
-                {% set ns.topics = ns.topics + [topic] -%}
-              {% endif -%}
-            {% endif -%}
-          {% endfor -%}
-        {% endif -%}
-        {{ ns.topics }}
 
   # Map normalized hardware events to physical buttons. Continuous dimming
   # only starts on keys for which the remote publishes a matching release.
@@ -612,8 +580,8 @@ actions:
         } -%}
         {{ releases.get(z2m_dimming_button_key | trim, '') }}
 
-  # Resolve an individual button's selected targets or use shared defaults.
-  # Empty button-specific fields retain the pre-v1.6 shared-target behavior.
+  # Resolve topics exclusively from the selected physical button.
+  # A button without selected targets does not publish MQTT messages.
   - variables:
       z2m_dimming_topics: >-
         {% set key = z2m_dimming_button_key | trim -%}
@@ -627,10 +595,7 @@ actions:
         {% set own = config.get(key, {'lights': [], 'topics': ''}) -%}
         {% set selected_lights = own.lights | default([], true) -%}
         {% set selected_text = own.topics | default('', true) -%}
-        {% if selected_lights | count == 0 and selected_text | trim == '' -%}
-          {{ z2m_dimming_global_topics }}
-        {%- else -%}
-          {% set ns = namespace(names=[], topics=[]) -%}
+        {% set ns = namespace(names=[], topics=[]) -%}
           {% set base = z2m_dimming_base_topic | trim | trim('/') -%}
           {% for entity_id in selected_lights -%}
             {% if entity_id.startswith('light.') -%}
@@ -656,7 +621,6 @@ actions:
             {% endif -%}
           {% endfor -%}
           {{ ns.topics }}
-        {%- endif %}
 
   # Diagnose: what was inferred from entity IDs, independent of manual
   # overrides. The actual published topics are in z2m_dimming_topics.
@@ -670,16 +634,7 @@ actions:
           'bottom_left': z2m_dimming_bottom_left_lights,
           'bottom_right': z2m_dimming_bottom_right_lights
         }.get(key, []) -%}
-        {% set manual = {
-          'top_left': z2m_dimming_top_left_topics,
-          'top_right': z2m_dimming_top_right_topics,
-          'center': z2m_dimming_center_topics,
-          'bottom_left': z2m_dimming_bottom_left_topics,
-          'bottom_right': z2m_dimming_bottom_right_topics
-        }.get(key, '') -%}
-        {% if selected | count == 0 and manual | trim == '' -%}
-          {% set selected = z2m_dimming_shared_lights -%}
-        {% endif -%}
+
         {% set ns = namespace(topics=[]) -%}
         {% set base = z2m_dimming_base_topic | trim | trim('/') -%}
         {% for ent in selected -%}
@@ -712,7 +667,7 @@ actions:
                   Zigbee2MQTT-dæmpning er aktiv, men ingen MQTT-topics blev
                   fundet for denne knap. Vælg lysentiteter eller angiv
                   friendly names/fulde topics under knappens sektion,
-                  eller vælg standardlys i de generelle indstillinger.
+                  under den pågældende knap.
           - choose:
               - conditions:
                   - condition: template
