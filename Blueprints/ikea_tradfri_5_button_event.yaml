@@ -38,7 +38,7 @@ blueprint:
 
     Kontinuerlig dæmpning på **øverst venstre** kræver omskifteren i **midten**; på **midterknappen** kræver den omskifteren til **venstre**. Øverst højre og begge nederste knapper understøtter alle positioner. Tænd/sluk-funktionen udsender ikke en slip-hændelse og kan derfor ikke bruges til denne type kontinuerlig dæmpning.
 
-    **Fejlfinding:** Kontrollér at omskifterpositionen er valgt korrekt, og brug *Vis beregnede MQTT-topics (diagnose)* til at se de topics, som blueprintet anvender. Entitets-ID bruges kun som et kvalificeret gæt på Zigbee2MQTT's friendly name. Ukendte knaphændelser kan undersøges i automationens spor (`raw_button_event` og `button_event`).
+    **Fejlfinding:** Kontrollér at omskifterpositionen er valgt korrekt, og brug *Vis anvendte MQTT-topics (diagnose)* til at se de topics, som blueprintet anvender. Entitets-ID bruges kun som et kvalificeret gæt på Zigbee2MQTT's friendly name. Ukendte knaphændelser kan undersøges i automationens spor (`raw_button_event` og `button_event`).
 
     [FUGA-modellen på Printables](https://www.printables.com/model/93848-zigbee-til-danske-kontakter) · [Zigbee2MQTT – enhedshændelser](https://www.zigbee2mqtt.io/devices/E1524_E1810.html)
   author: "mrmultifunk"
@@ -204,7 +204,7 @@ blueprint:
       icon: mdi:lightbulb-outline
       description: >-
         Kun med omskifteren i midten (venstre pil). Vælg retning, lys og eventuelt manuelt MQTT-topic her.
-        Tomt lysvalg bruger standardlys, hvis valgt.
+        Hvis både lys og MQTT-topics er tomme, bruges eventuelle standardlys.
       collapsed: true
       input:
         z2m_dimming_top_left_mode:
@@ -251,7 +251,7 @@ blueprint:
       icon: mdi:lightbulb-outline
       description: >-
         Virker i alle omskifterpositioner. Vælg retning, lys og eventuelt manuelt MQTT-topic her.
-        Tomt lysvalg bruger standardlys, hvis valgt.
+        Hvis både lys og MQTT-topics er tomme, bruges eventuelle standardlys.
       collapsed: true
       input:
         z2m_dimming_top_right_mode:
@@ -298,7 +298,7 @@ blueprint:
       icon: mdi:lightbulb-outline
       description: >-
         Kun med omskifteren til venstre (venstre pil). Vælg retning, lys og eventuelt manuelt MQTT-topic her.
-        Tomt lysvalg bruger standardlys, hvis valgt.
+        Hvis både lys og MQTT-topics er tomme, bruges eventuelle standardlys.
       collapsed: true
       input:
         z2m_dimming_center_mode:
@@ -345,7 +345,7 @@ blueprint:
       icon: mdi:lightbulb-outline
       description: >-
         Virker i alle omskifterpositioner. Vælg retning, lys og eventuelt manuelt MQTT-topic her.
-        Tomt lysvalg bruger standardlys, hvis valgt.
+        Hvis både lys og MQTT-topics er tomme, bruges eventuelle standardlys.
       collapsed: true
       input:
         z2m_dimming_bottom_left_mode:
@@ -392,7 +392,7 @@ blueprint:
       icon: mdi:lightbulb-outline
       description: >-
         Virker i alle omskifterpositioner. Vælg retning, lys og eventuelt manuelt MQTT-topic her.
-        Tomt lysvalg bruger standardlys, hvis valgt.
+        Hvis både lys og MQTT-topics er tomme, bruges eventuelle standardlys.
       collapsed: true
       input:
         z2m_dimming_bottom_right_mode:
