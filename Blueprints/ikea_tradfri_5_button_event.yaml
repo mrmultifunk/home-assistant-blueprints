@@ -1,13 +1,13 @@
 # IKEA TRÅDFRI E1524/E1810 – FUGA-konvertering til Zigbee2MQTT
-# Version: 1.9.0
+# Version: 1.9.1
 blueprint:
-  name: "IKEA TRÅDFRI – FUGA-fjernbetjening (Zigbee2MQTT) v1.9.0"
+  name: "IKEA TRÅDFRI – FUGA-fjernbetjening (Zigbee2MQTT) v1.9.1"
   description: |-
-    **IKEA TRÅDFRI · FUGA-fjernbetjening · v1.9.0**
+    **IKEA TRÅDFRI · FUGA-fjernbetjening · v1.9.1**
 
-    Vælg selv, hvad hver knap på din FUGA-kontakt skal gøre. Blueprintet understøtter **alle tre positioner** på den lille mekaniske omskifter. **Midten er standard.**
+    Konfigurér de fem fysiske knapper med korte og lange tryk samt slip-hændelser. Vælg omskifterens position under **Fjernbetjening og omskifter**.
 
-    ### Knapper – omskifter i midten (standard)
+    ### Knappernes placering (omskifter i midten)
 
     ```text
     ┌─────────────┬─────────────┐
@@ -19,66 +19,28 @@ blueprint:
     └─────────────┴─────────────┘
     ```
 
-    ### De andre omskifterpositioner
+    **Omskifterens tre positioner:**
+    - **Midten (standard):** Venstre pil øverst til venstre og tænd/sluk i midten.
+    - **Venstre:** Tænd/sluk øverst til venstre og venstre pil i midten.
+    - **Højre:** Tænd/sluk øverst til venstre og link/parring i midten. Linkknappen kan normalt ikke automatiseres.
 
-    - **Venstre:** Øverst venstre er **tænd/sluk**. Midterknappen er **venstre pil**. De øvrige knapper er uændrede.
-    - **Højre:** Øverst venstre er **tænd/sluk**. Midterknappen er **link/parring** og kan normalt ikke bruges til en automation. De øvrige knapper er uændrede.
+    ### Sådan indstiller du knapperne
 
-    Handlingerne er knyttet til **knappernes fysiske placering**. Blueprintet tilpasser Zigbee2MQTT-hændelserne efter den valgte omskifterposition. Du kan tilføje korte og lange tryk samt slip-handlinger. Ubrugte handlinger kan stå tomme.
+    **Kort tryk:** Vælg frit en Home Assistant-handling under den fysiske knap. **Langt tryk og slip:** Kan tilføjes separat under de avancerede handlinger.
 
-    > **Bemærk:** Omskifterens position skal vælges manuelt. Kontroller gerne hver knaps `event_type` i Home Assistant, da den mekaniske mapping er udledt af FUGA-frontens symboler.
+    **Kontinuerlig dæmpning (valgfrit):** Aktivér dæmpning under de generelle indstillinger. Vælg derefter *Øg lysstyrken* eller *Sænk lysstyrken* for hver relevant knap.
 
-    **Husk at tildele handlinger:** Knapperne har ingen standardhandling. Vælg f.eks. *Lys → Skift (toggle)* under den ønskede knap. Handlinger fra en tidligere automation overføres ikke automatisk.
+    **Lys og MQTT-topics:** Vælg en eller flere lysentiteter direkte under knappen. Har den ingen egne mål, bruges valgfri standardlys. Et præcist MQTT-topic kan angives under samme knap, hvis det automatiske gæt ikke passer.
 
-    **Fejlfinding:** Fjernbetjeningsvælgeren viser kun MQTT-event-entiteter. Ukendte knaphændelser får en forklaring i automationssporingen (`raw_button_event` og `button_event`).
+    **Slip og sikkerhed:** Lyset stopper normalt, når knappen slippes (`brightness_move: 0`). Hvis slip-hændelsen udebliver, sender blueprintet automatisk stop efter den valgte sikkerheds-timeout.
 
-    ### Valgfri Zigbee2MQTT-dæmpning
+    ### Vigtigt at vide
 
-    Aktivér *Kontinuerlig dæmpning*, og vælg en funktion for **hver fysisk knap**:
-    *Brugerdefineret*, *Øg lysstyrken* eller *Sænk lysstyrken*. Flere knapper kan
-    tildeles samme retning. Kun lange tryk overtages; korte tryk og øvrige
-    brugerdefinerede handlinger bevares. Slip giver `brightness_move: 0`,
-    og en sikkerheds-timeout stopper, hvis slip mangler.
+    Kontinuerlig dæmpning på **øverst venstre** kræver omskifteren i **midten**; på **midterknappen** kræver den omskifteren til **venstre**. Øverst højre og begge nederste knapper understøtter alle positioner. Tænd/sluk-funktionen udsender ikke en slip-hændelse og kan derfor ikke bruges til denne type kontinuerlig dæmpning.
 
-    **Begrænsning på TRÅDFRI E1524/E1810:**
-    - **Øverst venstre** kan dæmpe kontinuerligt, når omskifteren står
-      i **midten** (venstre pil).
-    - **Midterknappen** kan dæmpe kontinuerligt, når omskifteren står
-      til **venstre** (venstre pil).
-    - **Øverst højre** og begge **nederste knapper** kan dæmpe i alle
-      positioner.
-    - Tænd/sluk-knappen udsender ikke slip-hændelse; derfor kan
-      den ikke bruges til kontinuerlig dæmpning. Den højre
-      omskifterposition har desuden link/parring i midten.
+    **Fejlfinding:** Kontrollér at omskifterpositionen er valgt korrekt, og brug *Vis beregnede MQTT-topics (diagnose)* til at se de topics, som blueprintet anvender. Entitets-ID bruges kun som et kvalificeret gæt på Zigbee2MQTT's friendly name. Ukendte knaphændelser kan undersøges i automationens spor (`raw_button_event` og `button_event`).
 
-    Hvis en knap vælges i en position, der ikke udsender slip, falder
-    den tilbage på sin eksisterende brugerdefinerede hold-handling.
-    **Enkel opsætning:** Vælg retning og lys direkte under hver fysisk
-    knap. Vil flere knapper bruge samme lys, kan du vælge standardlys
-    under de generelle indstillinger. Tomme knapmål bruger disse.
-
-    **Manuel konfiguration:** Hvert manuelt MQTT-topic ligger under den
-    fysiske knap, det tilhører. Entitetens ID (efter 'light.') bruges
-    som best-effort friendly-name-gæt. Tidligere primære/ekstra
-    legacy-mål understøttes ikke længere; vælg dem i den fælles
-    flervælger eller direkte under knapperne.
-
-    **Vis gættet topic:** Aktivér Vis beregnede MQTT-topics (diagnose)
-    midlertidigt. Ved næste lange tryk viser en Home Assistant-notifikation
-    både gættede og faktisk anvendte topics. Notifikationen overskrives
-    ved næste tryk; slå diagnosen fra efter kontrol.
-
-    En Zigbee2MQTT-gruppe kan også angives som friendly name og er mere
-    effektiv, når flere Zigbee-enheder altid skal dæmpes sammen.
-    Lysentiteter bruges kun til best-effort afledning af friendly name;
-    Home Assistant eksponerer ikke MQTT command_topic direkte.
-    MQTT-meddelelser sendes uden retain.
-
-    **Parallelle kørsler:** Dette blueprint anvender `mode: parallel` for at
-    reagere øjeblikkeligt på slip-hændelser, mens en timeout venter. Egendefinerede
-    handlinger kan derfor også køre samtidigt (tidligere var tilstanden `queued`).
-
-    [FUGA-modellen på Printables](https://www.printables.com/model/93848-zigbee-til-danske-kontakter) · [Zigbee2MQTT – understøttede hændelser](https://www.zigbee2mqtt.io/devices/E1524_E1810.html)
+    [FUGA-modellen på Printables](https://www.printables.com/model/93848-zigbee-til-danske-kontakter) · [Zigbee2MQTT – enhedshændelser](https://www.zigbee2mqtt.io/devices/E1524_E1810.html)
   author: "mrmultifunk"
   domain: automation
   homeassistant:
@@ -164,13 +126,11 @@ blueprint:
             action: {}
 
     z2m_dimming:
-      name: "Zigbee2MQTT · Fælles dæmpningsindstillinger"
+      name: "Zigbee2MQTT · Dæmpning – generelt"
       icon: mdi:brightness-6
       description: >-
-        Generelle indstillinger: aktivering, hastighed, timeout, diagnose
-        og eventuelt standardlys. Hver fysisk knap har sin egen sektion
-        med retning, lys og manuel topic-indtastning. Tomme knapmål
-        bruger de valgte standardlys.
+        Aktivér dæmpning, vælg eventuelle standardlys, hastighed og timeout.
+        Vælg retning, lys og manuelle topics under de enkelte knapper.
       collapsed: true
       input:
         z2m_dimming_enabled:
@@ -181,10 +141,10 @@ blueprint:
             boolean: {}
 
         z2m_dimming_shared_lights:
-          name: "Fælles lys (vælg ét eller flere)"
+          name: "Standardlys (valgfrit)"
           description: >-
-            Valgfrit standardvalg til knapper uden egne mål.
-            Du kan også vælge alle lys individuelt under hver knap.
+            Bruges kun af knapper, hvor både lysvalg og manuelle
+            MQTT-topics er tomme. Flere lys kan vælges.
           default: []
           selector:
             entity:
@@ -194,7 +154,7 @@ blueprint:
                   integration: mqtt
 
         z2m_dimming_debug_topics:
-          name: "Vis beregnede MQTT-topics (diagnose)"
+          name: "Vis anvendte MQTT-topics (diagnose)"
           description: >-
             Når aktiv, vises en Home Assistant-notifikation ved langt
             tryk med automatisk gættede og faktisk anvendte topics.
@@ -248,7 +208,7 @@ blueprint:
       collapsed: true
       input:
         z2m_dimming_top_left_mode:
-          name: "ØVERST VENSTRE · Langt tryk"
+          name: "Funktion ved langt tryk"
           description: "Kontinuerlig dæmpning virker kun med omskifteren i MIDTEN (venstre pil)."
           default: custom
           selector:
@@ -263,10 +223,10 @@ blueprint:
                   value: down
 
         z2m_dimming_top_left_lights:
-          name: "Lysentiteter · Øverst venstre · ◀"
+          name: "Lys (vælg flere)"
           description: >-
-            Vælg et eller flere MQTT-lys eller grupper. Tomt = standardlys (hvis valgt).
-            Topic gættes fra entitets-ID; brug feltet nedenfor ved fejl.
+            Vælg de lys, denne knap skal styre. Lad både lys og manuelt
+            topic være tomme for at bruge standardlys.
           default: []
           selector:
             entity:
@@ -276,7 +236,7 @@ blueprint:
                   integration: mqtt
 
         z2m_dimming_top_left_topics:
-          name: "Manuelt MQTT-topic · Øverst venstre"
+          name: "Manuelle MQTT-topics (valgfrit)"
           description: >-
             Valgfrit. Skriv Zigbee2MQTT friendly name eller fuldt MQTT-topic,
             ét pr. linje, hvis topic-gættet er forkert. Kombineres med valgte
@@ -295,7 +255,7 @@ blueprint:
       collapsed: true
       input:
         z2m_dimming_top_right_mode:
-          name: "ØVERST HØJRE · Langt tryk"
+          name: "Funktion ved langt tryk"
           description: "Virker i alle tre omskifterpositioner."
           default: custom
           selector:
@@ -310,10 +270,10 @@ blueprint:
                   value: down
 
         z2m_dimming_top_right_lights:
-          name: "Lysentiteter · Øverst højre · ▶"
+          name: "Lys (vælg flere)"
           description: >-
-            Vælg et eller flere MQTT-lys eller grupper. Tomt = standardlys (hvis valgt).
-            Topic gættes fra entitets-ID; brug feltet nedenfor ved fejl.
+            Vælg de lys, denne knap skal styre. Lad både lys og manuelt
+            topic være tomme for at bruge standardlys.
           default: []
           selector:
             entity:
@@ -323,7 +283,7 @@ blueprint:
                   integration: mqtt
 
         z2m_dimming_top_right_topics:
-          name: "Manuelt MQTT-topic · Øverst højre"
+          name: "Manuelle MQTT-topics (valgfrit)"
           description: >-
             Valgfrit. Skriv Zigbee2MQTT friendly name eller fuldt MQTT-topic,
             ét pr. linje, hvis topic-gættet er forkert. Kombineres med valgte
@@ -342,7 +302,7 @@ blueprint:
       collapsed: true
       input:
         z2m_dimming_center_mode:
-          name: "MIDTEN · Langt tryk"
+          name: "Funktion ved langt tryk"
           description: "Kontinuerlig dæmpning virker kun med omskifteren til VENSTRE (venstre pil). Tænd/sluk har ikke en slip-hændelse."
           default: custom
           selector:
@@ -357,10 +317,10 @@ blueprint:
                   value: down
 
         z2m_dimming_center_lights:
-          name: "Lysentiteter · Midten · ⏻"
+          name: "Lys (vælg flere)"
           description: >-
-            Vælg et eller flere MQTT-lys eller grupper. Tomt = standardlys (hvis valgt).
-            Topic gættes fra entitets-ID; brug feltet nedenfor ved fejl.
+            Vælg de lys, denne knap skal styre. Lad både lys og manuelt
+            topic være tomme for at bruge standardlys.
           default: []
           selector:
             entity:
@@ -370,7 +330,7 @@ blueprint:
                   integration: mqtt
 
         z2m_dimming_center_topics:
-          name: "Manuelt MQTT-topic · Midten"
+          name: "Manuelle MQTT-topics (valgfrit)"
           description: >-
             Valgfrit. Skriv Zigbee2MQTT friendly name eller fuldt MQTT-topic,
             ét pr. linje, hvis topic-gættet er forkert. Kombineres med valgte
@@ -389,7 +349,7 @@ blueprint:
       collapsed: true
       input:
         z2m_dimming_bottom_left_mode:
-          name: "NEDERST VENSTRE · ☀ Langt tryk"
+          name: "Funktion ved langt tryk"
           description: "Virker i alle omskifterpositioner. Standard: Øg lysstyrken."
           default: up
           selector:
@@ -404,10 +364,10 @@ blueprint:
                   value: down
 
         z2m_dimming_bottom_left_lights:
-          name: "Lysentiteter · Nederst venstre · ☀"
+          name: "Lys (vælg flere)"
           description: >-
-            Vælg et eller flere MQTT-lys eller grupper. Tomt = standardlys (hvis valgt).
-            Topic gættes fra entitets-ID; brug feltet nedenfor ved fejl.
+            Vælg de lys, denne knap skal styre. Lad både lys og manuelt
+            topic være tomme for at bruge standardlys.
           default: []
           selector:
             entity:
@@ -417,7 +377,7 @@ blueprint:
                   integration: mqtt
 
         z2m_dimming_bottom_left_topics:
-          name: "Manuelt MQTT-topic · Nederst venstre"
+          name: "Manuelle MQTT-topics (valgfrit)"
           description: >-
             Valgfrit. Skriv Zigbee2MQTT friendly name eller fuldt MQTT-topic,
             ét pr. linje, hvis topic-gættet er forkert. Kombineres med valgte
@@ -436,7 +396,7 @@ blueprint:
       collapsed: true
       input:
         z2m_dimming_bottom_right_mode:
-          name: "NEDERST HØJRE · ☼ Langt tryk"
+          name: "Funktion ved langt tryk"
           description: "Virker i alle omskifterpositioner. Standard: Sænk lysstyrken."
           default: down
           selector:
@@ -451,10 +411,10 @@ blueprint:
                   value: down
 
         z2m_dimming_bottom_right_lights:
-          name: "Lysentiteter · Nederst højre · ☼"
+          name: "Lys (vælg flere)"
           description: >-
-            Vælg et eller flere MQTT-lys eller grupper. Tomt = standardlys (hvis valgt).
-            Topic gættes fra entitets-ID; brug feltet nedenfor ved fejl.
+            Vælg de lys, denne knap skal styre. Lad både lys og manuelt
+            topic være tomme for at bruge standardlys.
           default: []
           selector:
             entity:
@@ -464,7 +424,7 @@ blueprint:
                   integration: mqtt
 
         z2m_dimming_bottom_right_topics:
-          name: "Manuelt MQTT-topic · Nederst højre"
+          name: "Manuelle MQTT-topics (valgfrit)"
           description: >-
             Valgfrit. Skriv Zigbee2MQTT friendly name eller fuldt MQTT-topic,
             ét pr. linje, hvis topic-gættet er forkert. Kombineres med valgte
@@ -602,7 +562,7 @@ conditions:
 
 actions:
   - variables:
-      blueprint_version: "1.9.0"
+      blueprint_version: "1.9.1"
       raw_button_event: "{{ trigger.to_state.attributes.get('event_type', '') if trigger.to_state else '' }}"
       # Normalize the hardware event to a logical physical FUGA position.
       # Existing action input keys retain their meanings in Middle mode.
