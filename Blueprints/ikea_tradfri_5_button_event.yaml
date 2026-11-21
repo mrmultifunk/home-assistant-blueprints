@@ -596,31 +596,31 @@ actions:
         {% set selected_lights = own.lights | default([], true) -%}
         {% set selected_text = own.topics | default('', true) -%}
         {% set ns = namespace(names=[], topics=[]) -%}
-          {% set base = z2m_dimming_base_topic | trim | trim('/') -%}
-          {% for entity_id in selected_lights -%}
-            {% if entity_id.startswith('light.') -%}
-              {% set ns.names = ns.names + [entity_id.split('.', 1)[1]] -%}
-            {% endif -%}
-          {% endfor -%}
-          {% for line in selected_text.splitlines() -%}
-            {% set name = line | trim -%}
-            {% if name != '' and not name.startswith('#') -%}
-              {% set ns.names = ns.names + [name] -%}
-            {% endif -%}
-          {% endfor -%}
-          {% for name in ns.names -%}
-            {% if name.endswith('/set') and '/' in name -%}
-              {% set topic = name -%}
-            {% elif base != '' -%}
-              {% set topic = base ~ '/' ~ name ~ '/set' -%}
-            {% else -%}
-              {% set topic = '' -%}
-            {% endif -%}
-            {% if topic != '' and topic not in ns.topics -%}
-              {% set ns.topics = ns.topics + [topic] -%}
-            {% endif -%}
-          {% endfor -%}
-          {{ ns.topics }}
+        {% set base = z2m_dimming_base_topic | trim | trim('/') -%}
+        {% for entity_id in selected_lights -%}
+          {% if entity_id.startswith('light.') -%}
+            {% set ns.names = ns.names + [entity_id.split('.', 1)[1]] -%}
+          {% endif -%}
+        {% endfor -%}
+        {% for line in selected_text.splitlines() -%}
+          {% set name = line | trim -%}
+          {% if name != '' and not name.startswith('#') -%}
+            {% set ns.names = ns.names + [name] -%}
+          {% endif -%}
+        {% endfor -%}
+        {% for name in ns.names -%}
+          {% if name.endswith('/set') and '/' in name -%}
+            {% set topic = name -%}
+          {% elif base != '' -%}
+            {% set topic = base ~ '/' ~ name ~ '/set' -%}
+          {% else -%}
+            {% set topic = '' -%}
+          {% endif -%}
+          {% if topic != '' and topic not in ns.topics -%}
+            {% set ns.topics = ns.topics + [topic] -%}
+          {% endif -%}
+        {% endfor -%}
+        {{ ns.topics }}
 
   # Diagnose: what was inferred from entity IDs, independent of manual
   # overrides. The actual published topics are in z2m_dimming_topics.
@@ -634,7 +634,6 @@ actions:
           'bottom_left': z2m_dimming_bottom_left_lights,
           'bottom_right': z2m_dimming_bottom_right_lights
         }.get(key, []) -%}
-
         {% set ns = namespace(topics=[]) -%}
         {% set base = z2m_dimming_base_topic | trim | trim('/') -%}
         {% for ent in selected -%}
