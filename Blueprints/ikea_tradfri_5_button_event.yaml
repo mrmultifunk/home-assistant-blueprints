@@ -1,11 +1,11 @@
 # IKEA TRÅDFRI E1524/E1810 – FUGA-konvertering til Zigbee2MQTT
-# Version: 1.9.1
+# Version: 1.10.0
 blueprint:
-  name: "IKEA TRÅDFRI – FUGA-fjernbetjening (Zigbee2MQTT) v1.9.1"
+  name: "IKEA TRÅDFRI – FUGA-fjernbetjening (Zigbee2MQTT) v1.10.0"
   description: |-
-    **IKEA TRÅDFRI · FUGA-fjernbetjening · v1.9.1**
+    **IKEA TRÅDFRI · FUGA-fjernbetjening · v1.10.0**
 
-    Konfigurér de fem fysiske knapper med korte og lange tryk samt slip-hændelser. Vælg omskifterens position under **Fjernbetjening og omskifter**.
+    Konfigurér kort tryk, langt tryk, slip og Zigbee2MQTT-dæmpning **under hver fysisk knap**. Vælg først omskifterpositionen under **Fjernbetjening og omskifter**.
 
     ### Knappernes placering (omskifter i midten)
 
@@ -26,9 +26,9 @@ blueprint:
 
     ### Sådan indstiller du knapperne
 
-    **Kort tryk:** Vælg frit en Home Assistant-handling under den fysiske knap. **Langt tryk og slip:** Kan tilføjes separat under de avancerede handlinger.
+    **Alle knaphandlinger ét sted:** Vælg korttrykshandling, dæmpning, lys, manuelt MQTT-topic og eventuelle egne hold/slip-handlinger under den samme knap.
 
-    **Kontinuerlig dæmpning (valgfrit):** Aktivér dæmpning under de generelle indstillinger. Vælg derefter *Øg lysstyrken* eller *Sænk lysstyrken* for hver relevant knap.
+    **Kontinuerlig dæmpning (valgfrit):** Aktivér den under *Dæmpning · Generelle indstillinger*. Vælg derefter *Øg lysstyrken* eller *Sænk lysstyrken* under den relevante knap. Egne hold/slip-handlinger bruges, når den indbyggede dæmpning ikke overtager hændelsen.
 
     **Lys og MQTT-topics:** Vælg en eller flere lysentiteter direkte under knappen. Har den ingen egne mål, bruges valgfri standardlys. Et præcist MQTT-topic kan angives under samme knap, hvis det automatiske gæt ikke passer.
 
@@ -75,58 +75,8 @@ blueprint:
                 - label: "Højre – tænd/sluk øverst venstre, link/parring i midten"
                   value: right
 
-    top_row:
-      name: "1 · Øverst – venstre og højre"
-      icon: mdi:arrow-left-right
-      description: "De to øverste knapper. Funktionen af øverst venstre afhænger af omskifterens position."
-      input:
-        arrow_left_click_action:
-          name: "ØVERST VENSTRE · Kort tryk"
-          description: "Venstre pil i midterposition; tænd/sluk i venstre og højre position."
-          default: []
-          selector:
-            action: {}
-
-        arrow_right_click_action:
-          name: "ØVERST HØJRE · ▶ Kort tryk"
-          description: "Højre pil i alle tre positioner."
-          default: []
-          selector:
-            action: {}
-
-    middle_row:
-      name: "2 · Midten – midterknappen"
-      icon: mdi:power
-      description: "Tænd/sluk i midterposition, venstre pil i venstre position. Link/parring i højre position."
-      input:
-        center_click_action:
-          name: "MIDTEN · Kort tryk"
-          description: "Tænd/sluk i midterposition, venstre pil i venstre position. Ingen programmerbar handling i højre position."
-          default: []
-          selector:
-            action: {}
-
-    bottom_row:
-      name: "3 · Nederst – lysstyrke"
-      icon: mdi:brightness-6
-      description: "Stor sol til venstre (lysere), lille sol til højre (mørkere)."
-      input:
-        brightness_up_click_action:
-          name: "NEDERST VENSTRE · ☀ Lysere"
-          description: "Lysstyrke op – kort tryk i alle tre positioner."
-          default: []
-          selector:
-            action: {}
-
-        brightness_down_click_action:
-          name: "NEDERST HØJRE · ☼ Mørkere"
-          description: "Lysstyrke ned – kort tryk i alle tre positioner."
-          default: []
-          selector:
-            action: {}
-
     z2m_dimming:
-      name: "Zigbee2MQTT · Dæmpning – generelt"
+      name: "Dæmpning · Generelle indstillinger"
       icon: mdi:brightness-6
       description: >-
         Aktivér dæmpning, vælg eventuelle standardlys, hastighed og timeout.
@@ -164,11 +114,6 @@ blueprint:
           selector:
             boolean: {}
 
-
-
-
-
-
         z2m_dimming_speed:
           name: "Dæmpningshastighed (enheder/sekund)"
           default: 40
@@ -200,15 +145,22 @@ blueprint:
             text: {}
 
     z2m_dimming_top_left_section:
-      name: "Dæmpning · Øverst venstre · ◀"
-      icon: mdi:lightbulb-outline
+      name: "1 · Øverst venstre ◀"
+      icon: mdi:arrow-left
       description: >-
-        Kun med omskifteren i midten (venstre pil). Vælg retning, lys og eventuelt manuelt MQTT-topic her.
-        Hvis både lys og MQTT-topics er tomme, bruges eventuelle standardlys.
+        Venstre pil i midterposition. Tænd/sluk i venstre/højre position (ingen slip-hændelse). Alle handlinger og lysmål for denne knap findes her.
+        Hvis lys og MQTT-topics er tomme, bruges eventuelle standardlys.
       collapsed: true
       input:
+        arrow_left_click_action:
+          name: "Kort tryk"
+          description: "Venstre pil i midterposition; tænd/sluk i venstre og højre position."
+          default: []
+          selector:
+            action: {}
+
         z2m_dimming_top_left_mode:
-          name: "Funktion ved langt tryk"
+          name: "Langt tryk · Funktion"
           description: "Kontinuerlig dæmpning virker kun med omskifteren i MIDTEN (venstre pil)."
           default: custom
           selector:
@@ -246,16 +198,37 @@ blueprint:
             text:
               multiline: true
 
+        arrow_left_hold_action:
+          name: "Egen handling · Langt tryk"
+          description: "Bruges kun når langt tryk er indstillet til 'Brug eksisterende handling'."
+          default: []
+          selector:
+            action: {}
+
+        arrow_left_release_action:
+          name: "Egen handling · Slip"
+          description: "Bruges kun når knappen ikke anvender indbygget dæmpning."
+          default: []
+          selector:
+            action: {}
+
     z2m_dimming_top_right_section:
-      name: "Dæmpning · Øverst højre · ▶"
-      icon: mdi:lightbulb-outline
+      name: "2 · Øverst højre ▶"
+      icon: mdi:arrow-right
       description: >-
-        Virker i alle omskifterpositioner. Vælg retning, lys og eventuelt manuelt MQTT-topic her.
-        Hvis både lys og MQTT-topics er tomme, bruges eventuelle standardlys.
+        Højre pil i alle omskifterpositioner. Alle handlinger og lysmål for denne knap findes her.
+        Hvis lys og MQTT-topics er tomme, bruges eventuelle standardlys.
       collapsed: true
       input:
+        arrow_right_click_action:
+          name: "Kort tryk"
+          description: "Højre pil i alle tre positioner."
+          default: []
+          selector:
+            action: {}
+
         z2m_dimming_top_right_mode:
-          name: "Funktion ved langt tryk"
+          name: "Langt tryk · Funktion"
           description: "Virker i alle tre omskifterpositioner."
           default: custom
           selector:
@@ -293,16 +266,37 @@ blueprint:
             text:
               multiline: true
 
+        arrow_right_hold_action:
+          name: "Egen handling · Langt tryk"
+          description: "Bruges kun når langt tryk er indstillet til 'Brug eksisterende handling'."
+          default: []
+          selector:
+            action: {}
+
+        arrow_right_release_action:
+          name: "Egen handling · Slip"
+          description: "Bruges kun når knappen ikke anvender indbygget dæmpning."
+          default: []
+          selector:
+            action: {}
+
     z2m_dimming_center_section:
-      name: "Dæmpning · Midten · ⏻"
-      icon: mdi:lightbulb-outline
+      name: "3 · Midten ⏻"
+      icon: mdi:power
       description: >-
-        Kun med omskifteren til venstre (venstre pil). Vælg retning, lys og eventuelt manuelt MQTT-topic her.
-        Hvis både lys og MQTT-topics er tomme, bruges eventuelle standardlys.
+        Tænd/sluk i midten, venstre pil i venstre position, link/parring i højre position. Alle handlinger og lysmål for denne knap findes her.
+        Hvis lys og MQTT-topics er tomme, bruges eventuelle standardlys.
       collapsed: true
       input:
+        center_click_action:
+          name: "Kort tryk"
+          description: "Tænd/sluk i midterposition, venstre pil i venstre position. Ingen programmerbar handling i højre position."
+          default: []
+          selector:
+            action: {}
+
         z2m_dimming_center_mode:
-          name: "Funktion ved langt tryk"
+          name: "Langt tryk · Funktion"
           description: "Kontinuerlig dæmpning virker kun med omskifteren til VENSTRE (venstre pil). Tænd/sluk har ikke en slip-hændelse."
           default: custom
           selector:
@@ -340,16 +334,37 @@ blueprint:
             text:
               multiline: true
 
+        center_hold_action:
+          name: "Egen handling · Langt tryk"
+          description: "Bruges kun når langt tryk er indstillet til 'Brug eksisterende handling'."
+          default: []
+          selector:
+            action: {}
+
+        center_release_action:
+          name: "Egen handling · Slip"
+          description: "Bruges kun når knappen ikke anvender indbygget dæmpning."
+          default: []
+          selector:
+            action: {}
+
     z2m_dimming_bottom_left_section:
-      name: "Dæmpning · Nederst venstre · ☀"
-      icon: mdi:lightbulb-outline
+      name: "4 · Nederst venstre ☀"
+      icon: mdi:brightness-7
       description: >-
-        Virker i alle omskifterpositioner. Vælg retning, lys og eventuelt manuelt MQTT-topic her.
-        Hvis både lys og MQTT-topics er tomme, bruges eventuelle standardlys.
+        Stor sol i alle omskifterpositioner. Alle handlinger og lysmål for denne knap findes her.
+        Hvis lys og MQTT-topics er tomme, bruges eventuelle standardlys.
       collapsed: true
       input:
+        brightness_up_click_action:
+          name: "Kort tryk"
+          description: "Lysstyrke op – kort tryk i alle tre positioner."
+          default: []
+          selector:
+            action: {}
+
         z2m_dimming_bottom_left_mode:
-          name: "Funktion ved langt tryk"
+          name: "Langt tryk · Funktion"
           description: "Virker i alle omskifterpositioner. Standard: Øg lysstyrken."
           default: up
           selector:
@@ -387,16 +402,37 @@ blueprint:
             text:
               multiline: true
 
+        brightness_up_hold_action:
+          name: "Egen handling · Langt tryk"
+          description: "Bruges kun når langt tryk er indstillet til 'Brug eksisterende handling'."
+          default: []
+          selector:
+            action: {}
+
+        brightness_up_release_action:
+          name: "Egen handling · Slip"
+          description: "Bruges kun når knappen ikke anvender indbygget dæmpning."
+          default: []
+          selector:
+            action: {}
+
     z2m_dimming_bottom_right_section:
-      name: "Dæmpning · Nederst højre · ☼"
-      icon: mdi:lightbulb-outline
+      name: "5 · Nederst højre ☼"
+      icon: mdi:brightness-4
       description: >-
-        Virker i alle omskifterpositioner. Vælg retning, lys og eventuelt manuelt MQTT-topic her.
-        Hvis både lys og MQTT-topics er tomme, bruges eventuelle standardlys.
+        Lille sol i alle omskifterpositioner. Alle handlinger og lysmål for denne knap findes her.
+        Hvis lys og MQTT-topics er tomme, bruges eventuelle standardlys.
       collapsed: true
       input:
+        brightness_down_click_action:
+          name: "Kort tryk"
+          description: "Lysstyrke ned – kort tryk i alle tre positioner."
+          default: []
+          selector:
+            action: {}
+
         z2m_dimming_bottom_right_mode:
-          name: "Funktion ved langt tryk"
+          name: "Langt tryk · Funktion"
           description: "Virker i alle omskifterpositioner. Standard: Sænk lysstyrken."
           default: down
           selector:
@@ -434,84 +470,16 @@ blueprint:
             text:
               multiline: true
 
-    hold_actions:
-      name: "Avanceret · Lange tryk (valgfrit)"
-      icon: mdi:gesture-tap-hold
-      description: "Handlingen køres én gang, når et langt tryk registreres."
-      collapsed: true
-      input:
-        arrow_left_hold_action:
-          name: "ØVERST VENSTRE · Langt tryk"
-          description: "Venstre pil i midterposition; tænd/sluk i venstre og højre position."
-          default: []
-          selector:
-            action: {}
-
-        arrow_right_hold_action:
-          name: "ØVERST HØJRE · ▶ Langt tryk"
-          description: "Langt tryk på højre pil."
-          default: []
-          selector:
-            action: {}
-
-        center_hold_action:
-          name: "MIDTEN · Langt tryk"
-          description: "Tænd/sluk i midterposition; venstre pil i venstre position. Ikke tilgængelig i højre position."
-          default: []
-          selector:
-            action: {}
-
-        brightness_up_hold_action:
-          name: "NEDERST VENSTRE · ☀ Langt tryk"
-          description: "Langt tryk på lysstyrke op."
-          default: []
-          selector:
-            action: {}
-
         brightness_down_hold_action:
-          name: "NEDERST HØJRE · ☼ Langt tryk"
-          description: "Langt tryk på lysstyrke ned."
-          default: []
-          selector:
-            action: {}
-
-    release_actions:
-      name: "Avanceret · Slip knap (valgfrit)"
-      icon: mdi:gesture-tap-button
-      description: "Kører når en knap slippes efter et langt tryk, hvis Zigbee2MQTT udsender en slip-hændelse."
-      collapsed: true
-      input:
-        arrow_left_release_action:
-          name: "ØVERST VENSTRE · Slip"
-          description: "Slip venstre pil i midterposition; tænd/sluk har normalt ingen slip-hændelse."
-          default: []
-          selector:
-            action: {}
-
-        center_release_action:
-          name: "MIDTEN · Slip (kun venstre position)"
-          description: "Slip venstre pil på midterknappen, når omskifteren står til venstre."
-          default: []
-          selector:
-            action: {}
-
-        arrow_right_release_action:
-          name: "ØVERST HØJRE · ▶ Slip"
-          description: "Slip højre pil."
-          default: []
-          selector:
-            action: {}
-
-        brightness_up_release_action:
-          name: "NEDERST VENSTRE · ☀ Slip"
-          description: "Slip lysstyrke op."
+          name: "Egen handling · Langt tryk"
+          description: "Bruges kun når langt tryk er indstillet til 'Brug eksisterende handling'."
           default: []
           selector:
             action: {}
 
         brightness_down_release_action:
-          name: "NEDERST HØJRE · ☼ Slip"
-          description: "Slip lysstyrke ned."
+          name: "Egen handling · Slip"
+          description: "Bruges kun når knappen ikke anvender indbygget dæmpning."
           default: []
           selector:
             action: {}
@@ -562,7 +530,7 @@ conditions:
 
 actions:
   - variables:
-      blueprint_version: "1.9.1"
+      blueprint_version: "1.10.0"
       raw_button_event: "{{ trigger.to_state.attributes.get('event_type', '') if trigger.to_state else '' }}"
       # Normalize the hardware event to a logical physical FUGA position.
       # Existing action input keys retain their meanings in Middle mode.
